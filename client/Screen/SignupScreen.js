@@ -15,19 +15,25 @@ export default function SignupScreen({ route, navigation }) {
   const [email, setEmail] = useState("");
   const [roll, setRoll] = useState("");
   const [password, setPassword] = useState("");
+  const [repassword, setRepassword] = useState("");
 
   const handleSignup = () => {
-    if (!name || !email || !roll || !password) {
+    if (!name || !email || !roll || !password || !repassword) {
       alert("Please fill all fields!");
       return;
     }
+    if (password !== repassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
     alert(`Signup successful as ${role}`);
     // Here you can navigate to dashboard or login
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Signup as {role}</Text>
+      <Text style={styles.heading}>Register as {role}</Text>
 
       <TextInput
         style={styles.input}
@@ -46,22 +52,23 @@ export default function SignupScreen({ route, navigation }) {
       />
       <TextInput
         style={styles.input}
-        placeholder='Roll Number'
-        placeholderTextColor='#94A3B8'
-        value={roll}
-        onChangeText={setRoll}
-      />
-      <TextInput
-        style={styles.input}
         placeholder='Password'
         placeholderTextColor='#94A3B8'
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
+      <TextInput
+        style={styles.input}
+        placeholder='Re-enter Password'
+        placeholderTextColor='#94A3B8'
+        secureTextEntry
+        value={repassword}
+        onChangeText={setRepassword}
+      />
 
       <Pressable style={styles.signupBtn} onPress={handleSignup}>
-        <Text style={styles.btnText}>Signup</Text>
+        <Text style={styles.btnText}>Register</Text>
       </Pressable>
 
       <TouchableOpacity

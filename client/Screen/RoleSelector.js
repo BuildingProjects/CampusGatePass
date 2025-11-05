@@ -11,7 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 export default function RoleSelector({ navigation }) {
   const handleRoleSelect = (role) => {
-    navigation.navigate("SignupScreen", { role });
+    navigation.navigate("LoginScreen", { role });
   };
 
   return (
