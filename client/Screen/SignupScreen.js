@@ -6,6 +6,11 @@ import {
   TextInput,
   Pressable,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
 } from "react-native";
 
 export default function SignupScreen({ route, navigation }) {
@@ -13,12 +18,11 @@ export default function SignupScreen({ route, navigation }) {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [roll, setRoll] = useState("");
   const [password, setPassword] = useState("");
   const [repassword, setRepassword] = useState("");
 
   const handleSignup = () => {
-    if (!name || !email || !roll || !password || !repassword) {
+    if (!name || !email || !password || !repassword) {
       alert("Please fill all fields!");
       return;
     }
@@ -26,69 +30,84 @@ export default function SignupScreen({ route, navigation }) {
       alert("Passwords do not match!");
       return;
     }
-
     alert(`Signup successful as ${role}`);
-    // Here you can navigate to dashboard or login
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Register as {role}</Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps='handled'
+        >
+          <View style={styles.container}>
+            <Text style={styles.heading}>Register as {role}</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder='Full Name'
-        placeholderTextColor='#94A3B8'
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder='Email'
-        placeholderTextColor='#94A3B8'
-        keyboardType='email-address'
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder='Password'
-        placeholderTextColor='#94A3B8'
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder='Re-enter Password'
-        placeholderTextColor='#94A3B8'
-        secureTextEntry
-        value={repassword}
-        onChangeText={setRepassword}
-      />
+            <TextInput
+              style={styles.input}
+              placeholder='Full Name'
+              placeholderTextColor='#94A3B8'
+              value={name}
+              onChangeText={setName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder='Email'
+              placeholderTextColor='#94A3B8'
+              keyboardType='email-address'
+              value={email}
+              onChangeText={setEmail}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder='Password'
+              placeholderTextColor='#94A3B8'
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder='Re-enter Password'
+              placeholderTextColor='#94A3B8'
+              secureTextEntry
+              value={repassword}
+              onChangeText={setRepassword}
+            />
 
-      <Pressable style={styles.signupBtn} onPress={handleSignup}>
-        <Text style={styles.btnText}>Register</Text>
-      </Pressable>
+            <Pressable style={styles.signupBtn} onPress={handleSignup}>
+              <Text style={styles.btnText}>Register</Text>
+            </Pressable>
 
-      <TouchableOpacity
-        onPress={() => navigation.navigate("LoginScreen", { role })}
-      >
-        <Text style={styles.switchText}>
-          Already registered? <Text style={styles.linkText}>Sign in</Text>
-        </Text>
-      </TouchableOpacity>
-    </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("LoginScreen", { role })}
+            >
+              <Text style={styles.switchText}>
+                Already registered? <Text style={styles.linkText}>Sign in</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   container: {
     flex: 1,
     backgroundColor: "#0F172A",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
+    paddingVertical: 40,
   },
   heading: {
     fontSize: 24,

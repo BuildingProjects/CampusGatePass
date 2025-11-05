@@ -6,6 +6,11 @@ import {
   StyleSheet,
   Pressable,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 
 export default function LoginScreen({ route, navigation }) {
@@ -15,59 +20,83 @@ export default function LoginScreen({ route, navigation }) {
   const [password, setPassword] = useState("");
 
   const handleLogin = () => {
-    if (!email || !password) {
-      alert("Please fill in all fields!");
-      return;
+    // if (!email || !password) {
+    //   alert("Please fill in all fields!");
+    //   return;
+    // }
+
+    if (role === "Student") {
+      navigation.replace("StudentHome"); // ✅ Navigate to Student Dashboard
+    } else {
+      alert(`Logged in successfully as ${role}`);
+      // For Admin / Guard, you can later add: navigation.replace("AdminHome")
     }
-    alert(`Logged in successfully as ${role}`);
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Login as {role}</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder='Email'
-        placeholderTextColor='#94A3B8'
-        keyboardType='email-address'
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder='Password'
-        placeholderTextColor='#94A3B8'
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-
-      <Pressable style={styles.loginBtn} onPress={handleLogin}>
-        <Text style={styles.btnText}>Login</Text>
-      </Pressable>
-
-      {/* Show signup link only for Students */}
-      {role === "Student" && (
-        <TouchableOpacity
-          onPress={() => navigation.navigate("SignupScreen", { role })}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps='handled'
         >
-          <Text style={styles.switchText}>
-            Don’t have an account? <Text style={styles.linkText}>Register</Text>
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
+          <View style={styles.container}>
+            <Text style={styles.heading}>Login as {role}</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder='Email'
+              placeholderTextColor='#94A3B8'
+              keyboardType='email-address'
+              value={email}
+              onChangeText={setEmail}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder='Password'
+              placeholderTextColor='#94A3B8'
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+
+            <Pressable style={styles.loginBtn} onPress={handleLogin}>
+              <Text style={styles.btnText}>Login</Text>
+            </Pressable>
+
+            {/* Show signup link only for Students */}
+            {role === "Student" && (
+              <TouchableOpacity
+                onPress={() => navigation.navigate("SignupScreen", { role })}
+              >
+                <Text style={styles.switchText}>
+                  Don’t have an account?{" "}
+                  <Text style={styles.linkText}>Register</Text>
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   container: {
     flex: 1,
     backgroundColor: "#0F172A",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
+    paddingVertical: 40,
   },
   heading: {
     fontSize: 24,
