@@ -1,13 +1,19 @@
 const mongoose = require("mongoose");
 
 const studentSchema = new mongoose.Schema({
+  email: { type: String, unique: true, required: true },
+  password: String, 
+  otp: String,
+  isVerified: { type: Boolean, default: false },
+
+  // Profile fields
   name: String,
-  rollNumber: { type: String, unique: true },
-  email: { type: String, unique: true },
+  rollNumber: { type: String, unique: true, sparse: true },
   department: String,
-  year: Number,
-  qrCode: String, // base64 QR or encrypted string
-  isActive: { type: Boolean, default: true },
-});
+  batch: Number,
+  profilePhoto: String, // URL of uploaded photo
+  qrCode: String, // optional QR string
+
+}, { timestamps: true });
 
 module.exports = mongoose.model("Student", studentSchema);
