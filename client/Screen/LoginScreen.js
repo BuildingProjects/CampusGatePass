@@ -20,11 +20,17 @@ export default function LoginScreen({ route, navigation }) {
   const [password, setPassword] = useState("");
 
   const handleLogin = () => {
-    if (!email || !password) {
-      alert("Please fill in all fields!");
-      return;
+    // if (!email || !password) {
+    //   alert("Please fill in all fields!");
+    //   return;
+    // }
+
+    if (role === "Student") {
+      navigation.replace("StudentHome"); // ✅ Navigate to Student Dashboard
+    } else {
+      alert(`Logged in successfully as ${role}`);
+      // For Admin / Guard, you can later add: navigation.replace("AdminHome")
     }
-    alert(`Logged in successfully as ${role}`);
   };
 
   return (
