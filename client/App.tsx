@@ -32,8 +32,8 @@ export default function App() {
         <Stack.Screen
           name='LoginScreen'
           component={LoginScreen}
-          options={{ headerShown: false }}
-          // options={{ title: "Login" }}
+          // options={{ headerShown: false }}
+          options={{ title: "" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

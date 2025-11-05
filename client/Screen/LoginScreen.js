@@ -47,13 +47,16 @@ export default function LoginScreen({ route, navigation }) {
         <Text style={styles.btnText}>Login</Text>
       </Pressable>
 
-      <TouchableOpacity
-        onPress={() => navigation.navigate("SignupScreen", { role })}
-      >
-        <Text style={styles.switchText}>
-          Don’t have an account? <Text style={styles.linkText}>Sign up</Text>
-        </Text>
-      </TouchableOpacity>
+      {/* Show signup link only for Students */}
+      {role === "Student" && (
+        <TouchableOpacity
+          onPress={() => navigation.navigate("SignupScreen", { role })}
+        >
+          <Text style={styles.switchText}>
+            Don’t have an account? <Text style={styles.linkText}>Register</Text>
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
