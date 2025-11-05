@@ -1,0 +1,106 @@
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Pressable,
+  TouchableOpacity,
+} from "react-native";
+
+export default function LoginScreen({ route, navigation }) {
+  const { role } = route.params;
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = () => {
+    if (!email || !password) {
+      alert("Please fill in all fields!");
+      return;
+    }
+    alert(`Logged in successfully as ${role}`);
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.heading}>Login as {role}</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder='Email'
+        placeholderTextColor='#94A3B8'
+        keyboardType='email-address'
+        value={email}
+        onChangeText={setEmail}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder='Password'
+        placeholderTextColor='#94A3B8'
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+
+      <Pressable style={styles.loginBtn} onPress={handleLogin}>
+        <Text style={styles.btnText}>Login</Text>
+      </Pressable>
+
+      <TouchableOpacity
+        onPress={() => navigation.navigate("SignupScreen", { role })}
+      >
+        <Text style={styles.switchText}>
+          Don’t have an account? <Text style={styles.linkText}>Sign up</Text>
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#0F172A",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  heading: {
+    fontSize: 24,
+    color: "#fff",
+    fontWeight: "700",
+    marginBottom: 20,
+  },
+  input: {
+    width: "100%",
+    backgroundColor: "#1E293B",
+    color: "#fff",
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+  loginBtn: {
+    backgroundColor: "#10B981",
+    width: "100%",
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  btnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  switchText: {
+    color: "#cbd5e1",
+    marginTop: 20,
+    fontSize: 14,
+  },
+  linkText: {
+    color: "#3B82F6",
+    fontWeight: "600",
+  },
+});
