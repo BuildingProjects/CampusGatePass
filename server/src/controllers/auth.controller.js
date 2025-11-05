@@ -1,29 +1,81 @@
+const Student = require("../models/student.model");
 const Guard = require("../models/guard.model");
+const Admin = require("../models/admin.model");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-exports.registerGuard = async (req, res) => {
-  const { name, employeeId, password } = req.body;
-  const existing = await Guard.findOne({ employeeId });
-  if (existing)
-    return res.status(400).json({ message: "Guard already exists" });
+exports.login = async (req, res) => {
+  try {
+    const { role, email, password } = req.body;
 
-  const hash = await bcrypt.hash(password, 10);
-  const guard = await Guard.create({ name, employeeId, passwordHash: hash });
+    // 400 - missing fields
+    if (!role || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Role, email and password are required",
+      });
+    }
 
-  res.status(201).json({ message: "Guard registered", guard });
-};
+    const emailLower = email.toLowerCase();
+    let user;
 
-exports.loginGuard = async (req, res) => {
-  const { employeeId, password } = req.body;
-  const guard = await Guard.findOne({ employeeId });
-  if (!guard) return res.status(404).json({ message: "Guard not found" });
+    // find user based on role
+    if (role === "student") user = await Student.findOne({ email: emailLower });
+    else if (role === "guard") user = await Guard.findOne({ email: emailLower });
+    else if (role === "admin") user = await Admin.findOne({ email: emailLower });
+    else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role selected",
+      });
+    }
 
-  const isMatch = await bcrypt.compare(password, guard.passwordHash);
-  if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+    // 404 - not found
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: `${role} account not found`,
+      });
+    }
 
-  const token = jwt.sign({ id: guard._id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
-  res.json({ token, guard });
+    // compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Wrong password",
+      });
+    }
+
+    // ✅ Create token (no expiry)
+    const token = jwt.sign(
+      { id: user._id, role },
+      process.env.JWT_SECRET
+    );
+
+    // ✅ response for all roles
+    const responseData = {
+      token,
+      role,
+      email: user.email,
+    };
+
+    // ✅ Only student has verification flag
+    if (role === "student") {
+      responseData.isVerified = user.isVerified;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: responseData,
+    });
+
+  } catch (err) {
+    console.error("Login Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong, please try again",
+    });
+  }
 };
