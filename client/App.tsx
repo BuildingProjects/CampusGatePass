@@ -46,7 +46,7 @@ export default function App() {
         <Stack.Screen
           name='StudentHome'
           component={StudentHome}
-          options={{ headerShown: false }}
+          options={{ headerShown: false, gestureEnabled: false }}
         />
         <Stack.Screen
           name='GuardHome'

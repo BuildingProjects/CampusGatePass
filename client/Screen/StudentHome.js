@@ -63,12 +63,12 @@ function StudentDashboard() {
         <Text style={styles.qrLabel}>Your Campus QR Pass</Text>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#2563EB" />
+          <ActivityIndicator size='large' color='#2563EB' />
         ) : qrUrl ? (
           <Image
             source={{ uri: qrUrl }}
             style={styles.qrImage}
-            resizeMode="contain"
+            resizeMode='contain'
           />
         ) : (
           <Text style={styles.errorText}>QR not available</Text>
@@ -83,7 +83,7 @@ export default function StudentHome({ navigation }) {
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Sign Out", onPress: () => navigation.replace("RoleSelection") },
+      { text: "Sign Out", onPress: () => navigation.replace("RoleSelector") },
     ]);
   };
 
@@ -103,10 +103,10 @@ export default function StudentHome({ navigation }) {
         },
       })}
     >
-      <Tab.Screen name="Home" component={StudentDashboard} />
-      <Tab.Screen name="Profile" component={StudentProfile} />
+      <Tab.Screen name='Home' component={StudentDashboard} />
+      <Tab.Screen name='Profile' component={StudentProfile} />
       <Tab.Screen
-        name="Logout"
+        name='Logout'
         component={() => null}
         listeners={{
           tabPress: (e) => {
