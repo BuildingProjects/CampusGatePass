@@ -27,6 +27,9 @@ export default function LoginScreen({ route, navigation }) {
 
     if (role === "Student") {
       navigation.replace("StudentHome"); // ✅ Navigate to Student Dashboard
+    }
+    else if(role === "Guard"){
+      navigation.replace("GuardHome");
     } else {
       alert(`Logged in successfully as ${role}`);
       // For Admin / Guard, you can later add: navigation.replace("AdminHome")

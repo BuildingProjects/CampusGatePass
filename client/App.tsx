@@ -6,6 +6,7 @@ import SignupScreen from "./Screen/SignupScreen";
 import LoginScreen from "./Screen/LoginScreen";
 import StudentHome from "./Screen/StudentHome";
 import StudentProfile from "./Screen/StudentProfile";
+import GuardHome from "./Screen/GuardHome";
 
 // Screens
 
@@ -44,6 +45,11 @@ export default function App() {
         <Stack.Screen
           name='StudentHome'
           component={StudentHome}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name='GuardHome'
+          component={GuardHome}
           options={{ headerShown: false }}
         />
 

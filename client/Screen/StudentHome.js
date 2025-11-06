@@ -1,19 +1,53 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, Image, Pressable, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import QRCode from "react-native-qrcode-svg";
 import { Ionicons } from "@expo/vector-icons";
 import StudentProfile from "./StudentProfile";
 
 const Tab = createBottomTabNavigator();
 
-// ---------- MAIN HOME SCREEN ----------
+// ---------- STUDENT DASHBOARD ----------
 function StudentDashboard() {
   const [student] = useState({
     name: "Roshan Kumar",
     roll: "CSE2026012",
-    photo: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", // sample avatar
+    photo: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
   });
+
+  const [qrUrl, setQrUrl] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate fetching QR from backend
+    const fetchQr = async () => {
+      try {
+        // 🔹 Replace this later with your real backend URL
+        // const response = await fetch(`https://your-backend.com/api/student/${student.roll}/qr`);
+        // const data = await response.json();
+        // setQrUrl(data.qr_url);
+
+        // 🔹 Temporary QR code (static for now)
+        const tempQr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=Name:${encodeURIComponent(
+          student.name
+        )}%0ARoll:${encodeURIComponent(student.roll)}`;
+        setQrUrl(tempQr);
+      } catch (error) {
+        Alert.alert("Error", "Failed to load QR code.");
+        console.error("QR Fetch Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQr();
+  }, []);
 
   return (
     <View style={styles.screen}>
@@ -27,20 +61,24 @@ function StudentDashboard() {
       {/* QR Section */}
       <View style={styles.qrContainer}>
         <Text style={styles.qrLabel}>Your Campus QR Pass</Text>
-        <View style={styles.qrBox}>
-          <QRCode
-            value={`Name: ${student.name}\nRoll: ${student.roll}`}
-            size={180}
-            color='#2563EB'
-            backgroundColor='#fff'
+
+        {loading ? (
+          <ActivityIndicator size="large" color="#2563EB" />
+        ) : qrUrl ? (
+          <Image
+            source={{ uri: qrUrl }}
+            style={styles.qrImage}
+            resizeMode="contain"
           />
-        </View>
+        ) : (
+          <Text style={styles.errorText}>QR not available</Text>
+        )}
       </View>
     </View>
   );
 }
 
-// ---------- MAIN COMPONENT WITH NAVIGATION ----------
+// ---------- MAIN COMPONENT ----------
 export default function StudentHome({ navigation }) {
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to sign out?", [
@@ -65,10 +103,10 @@ export default function StudentHome({ navigation }) {
         },
       })}
     >
-      <Tab.Screen name='Home' component={StudentDashboard} />
-      <Tab.Screen name='Profile' component={StudentProfile} />
+      <Tab.Screen name="Home" component={StudentDashboard} />
+      <Tab.Screen name="Profile" component={StudentProfile} />
       <Tab.Screen
-        name='Logout'
+        name="Logout"
         component={() => null}
         listeners={{
           tabPress: (e) => {
@@ -81,6 +119,7 @@ export default function StudentHome({ navigation }) {
   );
 }
 
+// ---------- STYLES ----------
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -120,10 +159,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontWeight: "600",
   },
-  qrBox: {
+  qrImage: {
+    width: 200,
+    height: 200,
     backgroundColor: "#fff",
-    padding: 20,
     borderRadius: 20,
-    elevation: 5,
+    padding: 10,
+  },
+  errorText: {
+    color: "#EF4444",
+    fontSize: 14,
   },
 });
