@@ -19,20 +19,19 @@ export default function LoginScreen({ route, navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    // if (!email || !password) {
-    //   alert("Please fill in all fields!");
-    //   return;
-    // }
+  const handleLogin = async () => {
+    // Dummy response to simulate backend
+    const response = {
+      isVerified: false,
+      role: role,
+    };
 
-    if (role === "Student") {
-      navigation.replace("StudentHome"); // ✅ Navigate to Student Dashboard
-    }
-    else if(role === "Guard"){
-      navigation.replace("GuardHome");
+    if (!response.isVerified) {
+      navigation.replace("OTPScreen", { email, role });
     } else {
-      alert(`Logged in successfully as ${role}`);
-      // For Admin / Guard, you can later add: navigation.replace("AdminHome")
+      if (role === "Student") navigation.replace("StudentHome");
+      else if (role === "Guard") navigation.replace("GuardHome");
+      else alert(`Logged in successfully as ${role}`);
     }
   };
 
