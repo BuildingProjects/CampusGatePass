@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { API_BASE_URL } from "@env";
+import { CommonActions } from "@react-navigation/native";
 export default function LoginScreen({ route, navigation }) {
   const { role } = route.params;
 
@@ -97,7 +98,10 @@ export default function LoginScreen({ route, navigation }) {
             token,
           });
         } else {
-          navigation.replace("StudentHome");
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "StudentHome" }], // <-- must match your Stack.Screen name
+          });
         }
       } else if (userRole === "guard") {
         navigation.replace("GuardHome");
