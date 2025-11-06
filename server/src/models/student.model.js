@@ -12,7 +12,7 @@ const studentSchema = new mongoose.Schema({
   department: String,
   batch: Number,
   profilePhoto: String, // URL of uploaded photo
-  qrCode: String, // optional QR string
+  qrCode: String, // QR string
 
 }, { timestamps: true });
 

@@ -1,4 +1,5 @@
 const Student = require("../models/student.model");
+const QRCode = require("qrcode");
 
 
 exports.getProfile = async (req, res) => {
@@ -27,7 +28,7 @@ exports.getProfile = async (req, res) => {
 };
 
 
-
+//complete profile and qr generation
 exports.completeProfile = async (req, res) => {
   try {
     const { name, rollNumber, department, batch, profilePhoto } = req.body;
@@ -54,9 +55,26 @@ exports.completeProfile = async (req, res) => {
       { new: true }
     ).select("-password -otp");
 
+    if(!student){
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    const qrPayLoad = {
+      id: student._id.toString(),
+      rollNumber: student.rollNumber,
+    };
+
+    const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrPayLoad));
+
+    student.qrCode = qrDataUrl;
+    await student.save();
+
     return res.status(200).json({
       success: true,
-      message: "Profile updated successfully",
+      message: "Profile updated & qr generated successfully",
       data: student,
     });
 
