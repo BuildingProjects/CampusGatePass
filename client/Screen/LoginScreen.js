@@ -11,29 +11,107 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   Keyboard,
+  ActivityIndicator,
 } from "react-native";
-
+import { API_BASE_URL } from "@env";
 export default function LoginScreen({ route, navigation }) {
   const { role } = route.params;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false); // 🔹 Loader state
 
   const handleLogin = async () => {
-    // Dummy response to simulate backend
-    const response = {
-      isVerified: false,
-      role: role,
-    };
+    if (!email || !password) {
+      alert("Please fill in all fields!");
+      return;
+    }
 
-    if (role === "Student") {
-      if (!response.isVerified) {
-        navigation.replace("OTPScreen", { email, role });
-      } else {
-        navigation.replace("StudentHome");
+    try {
+      setLoading(true); // Start loader
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          role: role.toLowerCase(),
+          email: email.trim(),
+          password: password,
+        }),
+      });
+
+      // Parse response JSON
+      const data = await response.json();
+
+      // 🔍 Debug log (optional)
+      console.log("Login Response:", data);
+
+      // Check for HTTP-level errors
+      if (!response.ok) {
+        alert("Server Error: Something went wrong!");
+        return;
       }
-    } else if (role === "Guard") navigation.replace("GuardHome");
-    else alert(`Logged in successfully as ${role}`);
+
+      // Handle backend-defined errors
+      if (!data.success) {
+        alert(data.message || "Login failed. Please try again.");
+        return;
+      }
+
+      // ✅ Extract the main data object from backend response
+      const { token, role: userRole, email: userEmail, isVerified } = data.data;
+
+      // Save token if needed (for future authenticated requests)
+      // await AsyncStorage.setItem("authToken", token);
+
+      // ✅ Conditional navigation based on role and verification
+      if (userRole === "student") {
+        if (isVerified === false) {
+          // Step 2: Send OTP request
+          console.log("User not verified. Sending OTP...");
+
+          const otpResponse = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`, // ✅ Attach token
+            },
+          });
+
+          const otpData = await otpResponse.json();
+          console.log("Send OTP Response:", otpData);
+
+          if (!otpResponse.ok || !otpData.success) {
+            // Handle specific backend messages
+            alert(
+              otpData.message || "Failed to send OTP. Please try again later."
+            );
+            return;
+          }
+          alert("OTP sent successfully to your registered email!");
+          navigation.replace("OTPScreen", {
+            email: userEmail,
+            role: userRole,
+            token,
+          });
+        } else {
+          navigation.replace("StudentHome");
+        }
+      } else if (userRole === "guard") {
+        navigation.replace("GuardHome");
+      } else if (userRole === "admin") {
+        navigation.replace("AdminHome");
+      } else {
+        alert(`Logged in successfully as ${userRole}`);
+      }
+    } catch (error) {
+      console.error("Login Error:", error);
+      alert("Network error! Please check your connection or backend server.");
+    } finally {
+      setLoading(false); // Stop loader
+    }
   };
 
   return (
@@ -66,11 +144,18 @@ export default function LoginScreen({ route, navigation }) {
               onChangeText={setPassword}
             />
 
-            <Pressable style={styles.loginBtn} onPress={handleLogin}>
-              <Text style={styles.btnText}>Login</Text>
+            <Pressable
+              style={[styles.loginBtn, loading && { opacity: 0.6 }]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size='small' color='#fff' />
+              ) : (
+                <Text style={styles.btnText}>Login</Text>
+              )}
             </Pressable>
 
-            {/* Show signup link only for Students */}
             {role === "Student" && (
               <TouchableOpacity
                 onPress={() => navigation.navigate("SignupScreen", { role })}
