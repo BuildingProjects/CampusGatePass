@@ -5,6 +5,7 @@ const studentSchema = new mongoose.Schema({
   password: String, 
   otp: String,
   isVerified: { type: Boolean, default: false },
+  isProfileCompleted: { type: Boolean, default: false },
 
   // Profile fields
   name: String,

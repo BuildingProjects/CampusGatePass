@@ -40,7 +40,24 @@ exports.completeProfile = async (req, res) => {
       });
     }
 
-    // ensure roll number not used by another student
+    const student = await Student.findById(req.user.id);
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    // ❌ If profile already completed – BLOCK update
+    if (student.isProfileCompleted) {
+      return res.status(403).json({
+        success: false,
+        message: "Profile already completed. Editing is not allowed.",
+      });
+    }
+
+    // ✅ Check if roll number is already assigned to someone else
     const existing = await Student.findOne({ rollNumber });
     if (existing && existing._id.toString() !== req.user.id) {
       return res.status(409).json({
@@ -49,32 +66,28 @@ exports.completeProfile = async (req, res) => {
       });
     }
 
-    const student = await Student.findByIdAndUpdate(
-      req.user.id,
-      { name, rollNumber, department, batch, profilePhoto },
-      { new: true }
-    ).select("-password -otp");
+    // ✅ Update student profile
+    student.name = name;
+    student.rollNumber = rollNumber;
+    student.department = department;
+    student.batch = batch;
+    student.profilePhoto = profilePhoto;
+    student.isProfileCompleted = true;
 
-    if(!student){
-      return res.status(404).json({
-        success: false,
-        message: "Student not found",
-      });
-    }
-
-    const qrPayLoad = {
+    // ✅ Create QR Code payload
+    const qrPayload = {
       id: student._id.toString(),
       rollNumber: student.rollNumber,
     };
 
-    const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrPayLoad));
-
+    const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrPayload));
     student.qrCode = qrDataUrl;
+
     await student.save();
 
     return res.status(200).json({
       success: true,
-      message: "Profile updated & qr generated successfully",
+      message: "Profile completed & QR generated successfully",
       data: student,
     });
 
@@ -82,8 +95,7 @@ exports.completeProfile = async (req, res) => {
     console.error("Complete Profile Error:", err);
     return res.status(500).json({
       success: false,
-      message: "Failed to update profile",
+      message: "Failed to complete profile",
     });
   }
 };
-

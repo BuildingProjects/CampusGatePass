@@ -66,6 +66,38 @@ exports.isStudentVerified = async (req, res, next) => {
   }
 };
 
+// ✅ Check if student profile is completed
+exports.isProfileCompleted = async (req, res, next) => {
+  try {
+    const student = await Student.findById(req.user.id);
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student account not found",
+      });
+    }
+
+    if (!student.isProfileCompleted) {
+      return res.status(403).json({
+        success: false,
+        message: "Profile not completed. Please complete your profile first.",
+        isProfileCompleted: false
+      });
+    }
+
+    next();
+
+  } catch (err) {
+    console.error("isProfileCompleted Middleware Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
+
+
 // ✅ Guard role check
 exports.isGuard = (req, res, next) => {
   if (req.user.role !== "guard") {
