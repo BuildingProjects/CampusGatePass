@@ -26,13 +26,14 @@ export default function LoginScreen({ route, navigation }) {
       role: role,
     };
 
-    if (!response.isVerified) {
-      navigation.replace("OTPScreen", { email, role });
-    } else {
-      if (role === "Student") navigation.replace("StudentHome");
-      else if (role === "Guard") navigation.replace("GuardHome");
-      else alert(`Logged in successfully as ${role}`);
-    }
+    if (role === "Student") {
+      if (!response.isVerified) {
+        navigation.replace("OTPScreen", { email, role });
+      } else {
+        navigation.replace("StudentHome");
+      }
+    } else if (role === "Guard") navigation.replace("GuardHome");
+    else alert(`Logged in successfully as ${role}`);
   };
 
   return (
