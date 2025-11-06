@@ -11,7 +11,9 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Platform,
+  ActivityIndicator,
 } from "react-native";
+import { API_BASE_URL } from "@env";
 
 export default function SignupScreen({ route, navigation }) {
   const { role } = route.params;
@@ -20,8 +22,9 @@ export default function SignupScreen({ route, navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repassword, setRepassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!name || !email || !password || !repassword) {
       alert("Please fill all fields!");
       return;
@@ -30,7 +33,37 @@ export default function SignupScreen({ route, navigation }) {
       alert("Passwords do not match!");
       return;
     }
-    alert(`Signup successful as ${role}`);
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/registerStudent`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to register");
+      }
+
+      alert(data.message || "Registration successful!");
+
+      // redirect to login after success
+      navigation.navigate("LoginScreen", { role });
+    } catch (err) {
+      console.error("Signup Error:", err);
+      alert(err.message || "Network error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,45 +74,53 @@ export default function SignupScreen({ route, navigation }) {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps='handled'
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.container}>
             <Text style={styles.heading}>Register as {role}</Text>
 
             <TextInput
               style={styles.input}
-              placeholder='Full Name'
-              placeholderTextColor='#94A3B8'
+              placeholder="Full Name"
+              placeholderTextColor="#94A3B8"
               value={name}
               onChangeText={setName}
             />
             <TextInput
               style={styles.input}
-              placeholder='Email'
-              placeholderTextColor='#94A3B8'
-              keyboardType='email-address'
+              placeholder="Email"
+              placeholderTextColor="#94A3B8"
+              keyboardType="email-address"
               value={email}
               onChangeText={setEmail}
             />
             <TextInput
               style={styles.input}
-              placeholder='Password'
-              placeholderTextColor='#94A3B8'
+              placeholder="Password"
+              placeholderTextColor="#94A3B8"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
             />
             <TextInput
               style={styles.input}
-              placeholder='Re-enter Password'
-              placeholderTextColor='#94A3B8'
+              placeholder="Re-enter Password"
+              placeholderTextColor="#94A3B8"
               secureTextEntry
               value={repassword}
               onChangeText={setRepassword}
             />
 
-            <Pressable style={styles.signupBtn} onPress={handleSignup}>
-              <Text style={styles.btnText}>Register</Text>
+            <Pressable
+              style={[styles.signupBtn, loading && { opacity: 0.7 }]}
+              onPress={handleSignup}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.btnText}>Register</Text>
+              )}
             </Pressable>
 
             <TouchableOpacity
