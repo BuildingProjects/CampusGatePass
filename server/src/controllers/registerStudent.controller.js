@@ -45,7 +45,7 @@ exports.registerStudent = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Account created. Please verify OTP sent to your email."
+      message: "Account created. Please log in."
     });
 
   } catch (err) {

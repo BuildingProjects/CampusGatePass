@@ -5,6 +5,6 @@ const { authenticate, isStudent, isStudentVerified, isProfileCompleted } = requi
 const { getProfile, completeProfile } = require("../controllers/profile.controller");
 
 router.get("/getprofile", authenticate, isStudent, isStudentVerified, isProfileCompleted, getProfile);
-router.put("/completeprofile", authenticate, isStudent, isStudentVerified, completeProfile);
+router.post("/completeprofile", authenticate, isStudent, isStudentVerified, completeProfile);
 
 module.exports = router;
