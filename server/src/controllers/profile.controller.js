@@ -33,10 +33,10 @@ exports.completeProfile = async (req, res) => {
   try {
     const { name, rollNumber, department, batch, profilePhoto } = req.body;
 
-    if (!name || !rollNumber || !department || !batch) {
+    if (!name || !rollNumber || !department || !batch || !profilePhoto) {
       return res.status(400).json({
         success: false,
-        message: "All fields (name, rollNumber, department, batch) are required",
+        message: "All fields (name, rollNumber, department, batch, profile photo) are required",
       });
     }
 
@@ -77,7 +77,12 @@ exports.completeProfile = async (req, res) => {
     // ✅ Create QR Code payload
     const qrPayload = {
       id: student._id.toString(),
+      name: student.name,
       rollNumber: student.rollNumber,
+      department: student.department,
+      batch: student.batch,
+      profilePhoto: student.profilePhoto, // can be base64 or image URL
+      email: student.email,
     };
 
     const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrPayload));
