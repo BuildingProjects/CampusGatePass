@@ -1,5 +1,5 @@
 //---------------------Author Roshan---------------------------//
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 export default function GuardActivityScreen({ log }) {
-  const getTodayStats = () => {
+  // Using useMemo to recalculate stats whenever log changes
+  const stats = useMemo(() => {
     const today = new Date().toDateString();
     const todayLogs = log.filter(
       (entry) => new Date(entry.timestamp).toDateString() === today
@@ -21,39 +22,14 @@ export default function GuardActivityScreen({ log }) {
     ).length;
     const exits = todayLogs.filter((entry) => entry.action === "exit").length;
     return { total: todayLogs.length, entries, exits };
-  };
-
-  const stats = getTodayStats();
+  }, [log]); // Dependency array ensures recalculation when log changes
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <View style={styles.header}>
           <Text style={styles.heading}>Activity Log</Text>
-          <Text style={styles.subheading}>Track all student movements</Text>
         </View>
-
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <View style={[styles.statCard, styles.totalCard]}>
-            <Ionicons name='stats-chart' size={24} color='#3B82F6' />
-            <Text style={styles.statNumber}>{stats.total}</Text>
-            <Text style={styles.statLabel}>Today's Scans</Text>
-          </View>
-
-          <View style={[styles.statCard, styles.entryCard]}>
-            <Text style={styles.statIcon}>→</Text>
-            <Text style={styles.statNumber}>{stats.entries}</Text>
-            <Text style={styles.statLabel}>Entries</Text>
-          </View>
-
-          <View style={[styles.statCard, styles.exitCard]}>
-            <Text style={styles.statIcon}>←</Text>
-            <Text style={styles.statNumber}>{stats.exits}</Text>
-            <Text style={styles.statLabel}>Exits</Text>
-          </View>
-        </View>
-
         {/* Activity List */}
         <View style={styles.listHeader}>
           <Text style={styles.listTitle}>Recent Activity</Text>
