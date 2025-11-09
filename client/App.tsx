@@ -12,6 +12,7 @@ import ProfileCompletionScreen from "./Screen/ProfileCompletionScreen";
 import AdminHome from "./Screen/AdminHome";
 import ManageGuardsScreen from "./Screen/ManageGuardsScreen";
 import ManageAdminScreen from "./Screen/ManageAdminScreen";
+import ViewLogsScreen from "./Screen/ViewLogsScreen";
 
 // Screens
 
@@ -21,7 +22,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName='RoleSelector'
+        initialRouteName="RoleSelector"
         screenOptions={{
           headerTitleAlign: "center",
           headerStyle: { backgroundColor: "#0F172A" },
@@ -29,53 +30,53 @@ export default function App() {
         }}
       >
         <Stack.Screen
-          name='RoleSelector'
+          name="RoleSelector"
           component={RoleSelector}
           options={{ headerShown: false }}
         />
 
         <Stack.Screen
-          name='SignupScreen'
+          name="SignupScreen"
           component={SignupScreen}
           options={{ headerTitle: "" }} // ✅ keep header but hide title
         />
         <Stack.Screen
-          name='AdminHome'
+          name="AdminHome"
           component={AdminHome}
           options={{ headerShown: false }} // ✅ keep header but hide title
         />
 
         <Stack.Screen
-          name='LoginScreen'
+          name="LoginScreen"
           component={LoginScreen}
           options={{ headerTitle: "" }} // ✅ same here
         />
 
         {/* ✅ Add Student Home (with bottom tab navigation) */}
         <Stack.Screen
-          name='StudentHome'
+          name="StudentHome"
           component={StudentHome}
           options={{ headerShown: false, gestureEnabled: false }}
         />
         <Stack.Screen
-          name='GuardHome'
+          name="GuardHome"
           component={GuardHome}
           options={{ headerShown: false }}
         />
 
         {/* ✅ Add Student Profile (in case you want direct access) */}
         <Stack.Screen
-          name='StudentProfile'
+          name="StudentProfile"
           component={StudentProfile}
           options={{ headerTitle: "Edit Profile" }}
         />
         <Stack.Screen
-          name='OTPScreen'
+          name="OTPScreen"
           component={OTPScreen}
           options={{ headerTitle: "" }}
         />
         <Stack.Screen
-          name='ProfileCompletionScreen'
+          name="ProfileCompletionScreen"
           component={ProfileCompletionScreen}
           options={{ headerTitle: "" }}
         />
@@ -87,6 +88,12 @@ export default function App() {
         <Stack.Screen
           name='ManageAdminScreen'
           component={ManageAdminScreen}
+          options={{ headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="ViewLogsScreen"
+          component={ViewLogsScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

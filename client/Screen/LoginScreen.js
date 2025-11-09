@@ -44,7 +44,6 @@ export default function LoginScreen({ route, navigation }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // role: "student",
           role: role.toLowerCase(),
           email: email.trim(),
           password,
@@ -132,7 +131,6 @@ export default function LoginScreen({ route, navigation }) {
           CommonActions.reset({
             index: 0,
             routes: [{ name: "StudentHome" }], // token retrieved from AsyncStorage later
-            // routes: [{ name: "AdminHome" }], // token retrieved from AsyncStorage later
           })
         );
       }
@@ -177,23 +175,23 @@ export default function LoginScreen({ route, navigation }) {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps='handled'
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.container}>
             <Text style={styles.heading}>Login as {role}</Text>
 
             <TextInput
               style={styles.input}
-              placeholder='Email'
-              placeholderTextColor='#94A3B8'
-              keyboardType='email-address'
+              placeholder="Email"
+              placeholderTextColor="#94A3B8"
+              keyboardType="email-address"
               value={email}
               onChangeText={setEmail}
             />
             <TextInput
               style={styles.input}
-              placeholder='Password'
-              placeholderTextColor='#94A3B8'
+              placeholder="Password"
+              placeholderTextColor="#94A3B8"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
@@ -205,7 +203,7 @@ export default function LoginScreen({ route, navigation }) {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator size='small' color='#fff' />
+                <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <Text style={styles.btnText}>Login</Text>
               )}
