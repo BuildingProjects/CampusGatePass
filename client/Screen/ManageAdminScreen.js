@@ -46,16 +46,50 @@ export default function ManageAdminScreen({ navigation }) {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/admin/admins`, {
-        headers: { Authorization: `Bearer ${token}` },
+      // API call to get all employees with role "admin"
+      const response = await fetch(`${API_BASE_URL}/api/admin/getemployees`, {
+        method: "POST", // use POST because we’re sending role in body
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role: "admin" }),
       });
 
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setAdmins(data.data || []);
-      } else {
-        Alert.alert("Error", data.message || "Failed to fetch admins");
+      const text = await response.text();
+      console.log("🔍 Fetch Admins Response:", text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        Alert.alert("Server Error", "Invalid response format from server.");
+        return;
       }
+
+      // Handle backend responses
+      if (!response.ok || !data.success) {
+        switch (data.message) {
+          case "Authorization token missing":
+            Alert.alert("Error", "Token missing. Please log in again.");
+            break;
+          case "Invalid or expired token":
+            Alert.alert("Session Expired", "Please log in again.");
+            break;
+          case "Access denied. Admin only.":
+            Alert.alert("Access Denied", "Only admins can view admin data.");
+            break;
+          case "Role is required (guard or admin)":
+            Alert.alert("Error", "Role is required to fetch admins.");
+            break;
+          default:
+            Alert.alert("Error", data.message || "Failed to fetch admins.");
+        }
+        return;
+      }
+
+      // Success ✅
+      setAdmins(data.data || []);
     } catch (error) {
       console.error("❌ Fetch Admins Error:", error);
       Alert.alert("Network Error", "Unable to connect to the server.");
