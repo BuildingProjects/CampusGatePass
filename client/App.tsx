@@ -10,6 +10,8 @@ import GuardHome from "./Screen/GuardHome";
 import OTPScreen from "./Screen/OTPScreen";
 import ProfileCompletionScreen from "./Screen/ProfileCompletionScreen";
 import AdminHome from "./Screen/AdminHome";
+import ManageGuardsScreen from "./Screen/ManageGuardsScreen";
+import ManageAdminScreen from "./Screen/ManageAdminScreen";
 import ViewLogsScreen from "./Screen/ViewLogsScreen";
 
 // Screens
@@ -41,7 +43,7 @@ export default function App() {
         <Stack.Screen
           name="AdminHome"
           component={AdminHome}
-          options={{ headerTitle: "" }} // ✅ keep header but hide title
+          options={{ headerShown: false }} // ✅ keep header but hide title
         />
 
         <Stack.Screen
@@ -77,6 +79,16 @@ export default function App() {
           name="ProfileCompletionScreen"
           component={ProfileCompletionScreen}
           options={{ headerTitle: "" }}
+        />
+        <Stack.Screen
+          name='ManageGuardsScreen'
+          component={ManageGuardsScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name='ManageAdminScreen'
+          component={ManageAdminScreen}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen
