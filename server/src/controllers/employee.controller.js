@@ -77,3 +77,48 @@ exports.registerEmployee = async (req, res) => {
     });
   }
 };
+
+
+
+
+exports.getEmployees = async (req, res) => {
+  try {
+    const { role } = req.body;
+
+    if (!role) {
+      return res.status(400).json({
+        success: false,
+        message: "Role is required (guard or admin)",
+      });
+    }
+
+    if (!["guard", "admin"].includes(role.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role. Allowed roles: guard, admin",
+      });
+    }
+
+    let employees = [];
+
+    if (role === "guard") {
+      employees = await Guard.find({}, "-password").sort({ name: 1 }).lean();
+    } else {
+      employees = await Admin.find({}, "-password").sort({ name: 1 }).lean();
+    }
+
+    return res.status(200).json({
+      success: true,
+      role,
+      count: employees.length,
+      data: employees,
+    });
+
+  } catch (err) {
+    console.error("Get Employees Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch employees",
+    });
+  }
+};
