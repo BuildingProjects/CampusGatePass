@@ -1,3 +1,5 @@
+//---------------------Author Roshan---------------------------//
+
 import React, { useState } from "react";
 import {
   View,
@@ -12,23 +14,29 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   ActivityIndicator,
+  Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ Added for token storage
 import { API_BASE_URL } from "@env";
+import { CommonActions } from "@react-navigation/native";
+
 export default function LoginScreen({ route, navigation }) {
   const { role } = route.params;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false); // 🔹 Loader state
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      alert("Please fill in all fields!");
+      Alert.alert("Missing Fields", "Please fill in all fields!");
       return;
     }
 
     try {
-      setLoading(true); // Start loader
+      setLoading(true);
+
+      console.log("➡️ Logging in with:", email, role);
 
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
@@ -38,79 +46,124 @@ export default function LoginScreen({ route, navigation }) {
         body: JSON.stringify({
           role: role.toLowerCase(),
           email: email.trim(),
-          password: password,
+          password,
         }),
       });
 
-      // Parse response JSON
-      const data = await response.json();
+      const text = await response.text();
+      console.log("⬅️ Raw Login Response:", text);
 
-      // 🔍 Debug log (optional)
-      console.log("Login Response:", data);
-
-      // Check for HTTP-level errors
-      if (!response.ok) {
-        alert("Server Error: Something went wrong!");
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("JSON parse error:", err);
+        Alert.alert("Server Error", "Invalid server response.");
         return;
       }
 
-      // Handle backend-defined errors
-      if (!data.success) {
-        alert(data.message || "Login failed. Please try again.");
+      if (!response.ok || !data.success) {
+        Alert.alert("Login Failed", data.message || "Please try again.");
         return;
       }
 
-      // ✅ Extract the main data object from backend response
       const { token, role: userRole, email: userEmail, isVerified } = data.data;
 
-      // Save token if needed (for future authenticated requests)
-      // await AsyncStorage.setItem("authToken", token);
+      // ✅ Save token securely for later use
+      await AsyncStorage.setItem("token", token);
+      await AsyncStorage.setItem("role", userRole);
+      await AsyncStorage.setItem("email", userEmail);
 
-      // ✅ Conditional navigation based on role and verification
+      // ✅ Student Login Flow
       if (userRole === "student") {
-        if (isVerified === false) {
-          // Step 2: Send OTP request
-          console.log("User not verified. Sending OTP...");
+        if (!isVerified) {
+          console.log("User not verified → sending OTP...");
 
           const otpResponse = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`, // ✅ Attach token
+              Authorization: `Bearer ${token}`,
             },
           });
 
-          const otpData = await otpResponse.json();
-          console.log("Send OTP Response:", otpData);
+          const otpText = await otpResponse.text();
+          console.log("⬅️ OTP Response:", otpText);
+
+          let otpData;
+          try {
+            otpData = JSON.parse(otpText);
+          } catch (err) {
+            Alert.alert("Server Error", "Invalid OTP API response.");
+            return;
+          }
 
           if (!otpResponse.ok || !otpData.success) {
-            // Handle specific backend messages
-            alert(
-              otpData.message || "Failed to send OTP. Please try again later."
+            Alert.alert(
+              "Error",
+              otpData.message || "Failed to send OTP. Try again later."
             );
             return;
           }
-          alert("OTP sent successfully to your registered email!");
-          navigation.replace("OTPScreen", {
-            email: userEmail,
-            role: userRole,
-            token,
-          });
-        } else {
-          navigation.replace("StudentHome");
+
+          Alert.alert(
+            "OTP Sent",
+            "OTP sent successfully to your registered email!"
+          );
+
+          // ✅ Navigate to OTP screen with token
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [
+                {
+                  name: "OTPScreen",
+                  params: { email: userEmail, role: userRole, token },
+                },
+              ],
+            })
+          );
+          return;
         }
-      } else if (userRole === "guard") {
-        navigation.replace("GuardHome");
-      } else if (userRole === "admin") {
-        navigation.replace("AdminHome");
+
+        // ✅ Verified student → navigate to StudentHome
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "StudentHome" }], // token retrieved from AsyncStorage later
+          })
+        );
+      }
+
+      // ✅ Guard Login Flow
+      else if (userRole === "guard") {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "GuardHome" }],
+          })
+        );
+      }
+
+      // ✅ Admin Login Flow
+      else if (userRole === "admin") {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "AdminHome" }],
+          })
+        );
       } else {
-        alert(`Logged in successfully as ${userRole}`);
+        Alert.alert("Success", `Logged in successfully as ${userRole}`);
       }
     } catch (error) {
       console.error("Login Error:", error);
-      alert("Network error! Please check your connection or backend server.");
+      Alert.alert(
+        "Network Error",
+        "Unable to connect. Please check your internet or backend server."
+      );
     } finally {
-      setLoading(false); // Stop loader
+      setLoading(false);
     }
   };
 

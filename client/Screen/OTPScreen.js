@@ -108,8 +108,12 @@ export default function OTPScreen({ route, navigation }) {
       // ✅ OTP verified successfully
       Alert.alert("Success", "Account verified successfully!");
 
-      if (role === "student") navigation.replace("StudentHome");
-      else if (role === "guard") navigation.replace("GuardHome");
+      if (role === "student") {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "StudentHome" }],
+        });
+      } else if (role === "guard") navigation.replace("GuardHome");
       else navigation.replace("AdminHome");
     } catch (error) {
       console.error("Verify OTP Error:", error);
