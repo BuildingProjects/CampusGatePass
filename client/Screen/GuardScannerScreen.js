@@ -12,6 +12,8 @@ import {
   ScrollView,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@env";
 
 export default function GuardScannerScreen({ log, setLog }) {
   const [permission, requestPermission] = useCameraPermissions();
@@ -67,17 +69,92 @@ export default function GuardScannerScreen({ log, setLog }) {
     }
   };
 
-  const handleAction = (type) => {
-    if (studentData) {
-      const logEntry = {
-        ...studentData,
-        action: type,
+  const handleAction = async (type) => {
+    if (!studentData) {
+      Alert.alert("Error", "No student data found. Please scan a QR first.");
+      return;
+    }
+
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      if (!token) {
+        Alert.alert(
+          "Error",
+          "Authorization token missing. Please log in again."
+        );
+        return;
+      }
+
+      const payload = {
+        rollNumber: studentData.roll,
+        name: studentData.name,
+        action: type.toUpperCase(), // "entry" or "exit"
       };
-      setLog((prev) => [logEntry, ...prev]);
+      console.log(payload);
+
+      console.log("➡️ Sending log payload:", payload);
+
+      const response = await fetch(`${API_BASE_URL}/api/log/createlog`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const text = await response.text();
+      console.log("⬅️ Raw Log API Response:", text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("❌ JSON Parse Error:", err);
+        Alert.alert("Server Error", "Invalid response format from backend.");
+        return;
+      }
+
+      // Handle backend responses properly
+      if (!response.ok || !data.success) {
+        switch (data.message) {
+          case "rollNumber, name and action are required":
+            Alert.alert("Error", "Incomplete data. Try scanning again.");
+            break;
+          case "Authorization token missing":
+            Alert.alert("Error", "Token missing. Please login again.");
+            break;
+          case "Invalid or expired token":
+            Alert.alert("Session Expired", "Please log in again.");
+            break;
+          case "Access denied. Guards only.":
+            Alert.alert("Access Denied", "Only guards can record logs.");
+            break;
+          default:
+            Alert.alert("Error", data.message || "Failed to record log.");
+        }
+        return;
+      }
+
+      console.log("✅ Log created successfully:", data.data);
+      setLog((prev) => [
+        {
+          ...studentData,
+          action: type,
+          timestamp: new Date().toLocaleString(),
+        },
+        ...prev,
+      ]);
+
+      Alert.alert("Success", `Log recorded: ${type.toUpperCase()}`, [
+        { text: "OK", onPress: resetScanner },
+      ]);
+    } catch (error) {
+      console.error("❌ Log API Error:", error);
       Alert.alert(
-        "Success",
-        `${studentData.name} marked for ${type.toUpperCase()}`,
-        [{ text: "OK", onPress: resetScanner }]
+        "Network Error",
+        "Unable to connect. Please check your internet or backend server."
       );
     }
   };
