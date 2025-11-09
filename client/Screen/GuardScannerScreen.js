@@ -6,53 +6,94 @@ import {
   StyleSheet,
   Pressable,
   Alert,
+  Image,
   ActivityIndicator,
   SafeAreaView,
+  ScrollView,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { Ionicons } from "@expo/vector-icons";
 
 export default function GuardScannerScreen({ log, setLog }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [studentData, setStudentData] = useState(null);
+  const [rawData, setRawData] = useState("");
+  const [actionType, setActionType] = useState(null); // 'entry' or 'exit'
 
   useEffect(() => {
     if (!permission?.granted) requestPermission();
   }, [permission]);
 
   const handleBarCodeScanned = ({ data }) => {
+    console.log("📦 Raw QR Data:", data);
+    setRawData(data);
     setScanned(true);
-    try {
-      const lines = data.split("\n");
-      const name = lines[0]?.replace("Name:", "").trim();
-      const roll = lines[1]?.replace("Roll:", "").trim();
-      const isValid = roll && roll.startsWith("22CS");
 
-      const result = {
-        name,
-        roll,
-        valid: isValid,
-        timestamp: new Date().toLocaleString(),
-      };
+    try {
+      let parsed = null;
+      try {
+        parsed = JSON.parse(data);
+      } catch {
+        parsed = null;
+      }
+
+      const result = parsed
+        ? {
+            name: parsed.name || "Unknown",
+            roll: parsed.rollNumber || "N/A",
+            photo:
+              parsed.profilePhoto ||
+              "https://dummyimage.com/200x200/000/fff&text=No+Photo",
+            valid: true,
+            timestamp: new Date().toLocaleString(),
+          }
+        : {
+            name: data.includes("Name:")
+              ? data.split("\n")[0]?.replace("Name:", "").trim()
+              : "Unknown",
+            roll: data.includes("Roll:")
+              ? data.split("\n")[1]?.replace("Roll:", "").trim()
+              : "N/A",
+            photo: "https://dummyimage.com/200x200/000/fff&text=No+Photo",
+            valid: data.includes("Name:") || data.includes("Roll:"),
+            timestamp: new Date().toLocaleString(),
+          };
 
       setStudentData(result);
-      setLog((prev) => [result, ...prev]);
-    } catch {
+    } catch (error) {
+      console.log("QR Parse Error:", error);
       Alert.alert("Invalid QR", "The scanned QR code is not valid.");
+      setScanned(false);
+    }
+  };
+
+  const handleAction = (type) => {
+    if (studentData) {
+      const logEntry = {
+        ...studentData,
+        action: type,
+      };
+      setLog((prev) => [logEntry, ...prev]);
+      Alert.alert(
+        "Success",
+        `${studentData.name} marked for ${type.toUpperCase()}`,
+        [{ text: "OK", onPress: resetScanner }]
+      );
     }
   };
 
   const resetScanner = () => {
     setScanned(false);
     setStudentData(null);
+    setRawData("");
+    setActionType(null);
   };
 
   if (!permission) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size='large' color='#2563EB' />
-        <Text style={styles.text}>Requesting camera permission...</Text>
+        <ActivityIndicator size='large' color='#3B82F6' />
+        <Text style={styles.loadingText}>Requesting camera permission...</Text>
       </View>
     );
   }
@@ -60,12 +101,16 @@ export default function GuardScannerScreen({ log, setLog }) {
   if (!permission.granted) {
     return (
       <View style={styles.center}>
-        <Text style={styles.text}>
-          Camera access is required to scan QR codes.
-        </Text>
-        <Pressable style={styles.permissionBtn} onPress={requestPermission}>
-          <Text style={styles.btnText}>Grant Permission</Text>
-        </Pressable>
+        <View style={styles.permissionCard}>
+          <Text style={styles.permissionIcon}>📷</Text>
+          <Text style={styles.permissionTitle}>Camera Access Required</Text>
+          <Text style={styles.permissionText}>
+            We need camera access to scan student QR codes
+          </Text>
+          <Pressable style={styles.permissionBtn} onPress={requestPermission}>
+            <Text style={styles.btnText}>Grant Permission</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -75,7 +120,10 @@ export default function GuardScannerScreen({ log, setLog }) {
       <View style={styles.screen}>
         {!scanned ? (
           <View style={styles.scannerContainer}>
-            <Text style={styles.heading}>Scan Student QR</Text>
+            <View style={styles.header}>
+              <Text style={styles.heading}>Guard Scanner</Text>
+              <Text style={styles.subheading}>Scan student QR code</Text>
+            </View>
 
             <View style={styles.cameraWrapper}>
               <CameraView
@@ -83,44 +131,78 @@ export default function GuardScannerScreen({ log, setLog }) {
                 barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
                 onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
               />
+              <View style={styles.scannerOverlay}>
+                <View style={styles.cornerTL} />
+                <View style={styles.cornerTR} />
+                <View style={styles.cornerBL} />
+                <View style={styles.cornerBR} />
+              </View>
             </View>
 
-            <Text style={styles.scanHint}>Align QR within the frame</Text>
+            <View style={styles.hintContainer}>
+              <Text style={styles.scanHint}>
+                Position QR code within the frame
+              </Text>
+            </View>
           </View>
         ) : (
-          <View style={styles.resultContainer}>
-            <Ionicons
-              name={studentData?.valid ? "checkmark-circle" : "close-circle"}
-              size={80}
-              color={studentData?.valid ? "#22C55E" : "#EF4444"}
-            />
-            <Text style={styles.resultText}>
-              {studentData?.valid ? "Access Granted" : "Invalid QR"}
-            </Text>
-
+          <ScrollView
+            contentContainerStyle={styles.resultContainer}
+            showsVerticalScrollIndicator={false}
+          >
             {studentData && (
-              <View style={styles.detailsBox}>
-                <Text style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Name: </Text>
-                  <Text style={styles.detailValue}>{studentData.name}</Text>
-                </Text>
-                <Text style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Roll No: </Text>
-                  <Text style={styles.detailValue}>{studentData.roll}</Text>
-                </Text>
-                <Text style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Time: </Text>
-                  <Text style={styles.detailValue}>
-                    {studentData.timestamp}
-                  </Text>
-                </Text>
-              </View>
-            )}
+              <>
+                <View style={styles.card}>
+                  <View style={styles.photoContainer}>
+                    <Image
+                      source={{
+                        uri:
+                          studentData.photo ||
+                          "https://dummyimage.com/200x200/000/fff&text=No+Photo",
+                      }}
+                      style={styles.profilePhoto}
+                    />
+                    <View style={styles.verifiedBadge}>
+                      <Text style={styles.verifiedText}>✓</Text>
+                    </View>
+                  </View>
 
-            <Pressable style={styles.scanAgainBtn} onPress={resetScanner}>
-              <Text style={styles.btnText}>Scan Another QR</Text>
-            </Pressable>
-          </View>
+                  <Text style={styles.name}>{studentData.name}</Text>
+                  <Text style={styles.roll}>Roll No: {studentData.roll}</Text>
+
+                  <View style={styles.timeContainer}>
+                    <Text style={styles.timeIcon}>🕐</Text>
+                    <Text style={styles.time}>{studentData.timestamp}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.actionContainer}>
+                  <Text style={styles.actionTitle}>Select Action</Text>
+                  <View style={styles.buttonRow}>
+                    <Pressable
+                      style={[styles.actionBtn, styles.entryBtn]}
+                      onPress={() => handleAction("entry")}
+                    >
+                      <Text style={styles.actionIcon}>→</Text>
+                      <Text style={styles.actionBtnText}>Entry</Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={[styles.actionBtn, styles.exitBtn]}
+                      onPress={() => handleAction("exit")}
+                    >
+                      <Text style={styles.actionIcon}>←</Text>
+                      <Text style={styles.actionBtnText}>Exit</Text>
+                    </Pressable>
+                  </View>
+                </View>
+
+                <Pressable style={styles.scanAgainBtn} onPress={resetScanner}>
+                  <Text style={styles.scanAgainText}>↻ Scan Another</Text>
+                </Pressable>
+              </>
+            )}
+          </ScrollView>
         )}
       </View>
     </SafeAreaView>
@@ -130,93 +212,300 @@ export default function GuardScannerScreen({ log, setLog }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0A0E1A",
   },
   screen: {
     flex: 1,
-    backgroundColor: "#0F172A",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
+    backgroundColor: "#0A0E1A",
   },
   scannerContainer: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
     flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
   center: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0A0E1A",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 30,
   },
-  text: {
-    color: "#cbd5e1",
+  loadingText: {
+    color: "#94A3B8",
     fontSize: 15,
-    textAlign: "center",
-  },
-  permissionBtn: {
-    backgroundColor: "#2563EB",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 12,
     marginTop: 15,
   },
-  heading: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  cameraWrapper: {
-    width: "90%",
-    aspectRatio: 1,
-    borderRadius: 20,
-    overflow: "hidden",
-    borderWidth: 2.5,
-    borderColor: "#3B82F6",
+  permissionCard: {
     backgroundColor: "#1E293B",
-    justifyContent: "center",
+    borderRadius: 24,
+    padding: 30,
     alignItems: "center",
-    elevation: 6,
+    width: "100%",
+    maxWidth: 340,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  scanHint: {
-    color: "#94A3B8",
-    textAlign: "center",
-    marginTop: 20,
-    fontSize: 14,
+  permissionIcon: {
+    fontSize: 60,
+    marginBottom: 15,
   },
-  resultContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  resultText: {
-    color: "#fff",
+  permissionTitle: {
+    color: "#F1F5F9",
     fontSize: 22,
-    fontWeight: "600",
-    marginTop: 10,
+    fontWeight: "700",
+    marginBottom: 10,
+    textAlign: "center",
   },
-  detailsBox: {
-    backgroundColor: "#1E293B",
-    padding: 16,
+  permissionText: {
+    color: "#94A3B8",
+    fontSize: 15,
+    textAlign: "center",
+    marginBottom: 25,
+    lineHeight: 22,
+  },
+  permissionBtn: {
+    backgroundColor: "#3B82F6",
+    paddingVertical: 14,
+    paddingHorizontal: 32,
     borderRadius: 14,
     width: "100%",
-    marginVertical: 18,
-    elevation: 3,
+    elevation: 4,
   },
-  detailRow: { marginBottom: 8 },
-  detailLabel: { color: "#94A3B8", fontSize: 15 },
-  detailValue: { color: "#fff", fontSize: 16, fontWeight: "500" },
+  header: {
+    marginBottom: 30,
+    alignItems: "center",
+  },
+  heading: {
+    color: "#F1F5F9",
+    fontSize: 32,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  subheading: {
+    color: "#64748B",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  cameraWrapper: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: 24,
+    overflow: "hidden",
+    backgroundColor: "#1E293B",
+    elevation: 10,
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+  },
+  scannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cornerTL: {
+    position: "absolute",
+    top: 30,
+    left: 30,
+    width: 40,
+    height: 40,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: "#3B82F6",
+    borderTopLeftRadius: 8,
+  },
+  cornerTR: {
+    position: "absolute",
+    top: 30,
+    right: 30,
+    width: 40,
+    height: 40,
+    borderTopWidth: 4,
+    borderRightWidth: 4,
+    borderColor: "#3B82F6",
+    borderTopRightRadius: 8,
+  },
+  cornerBL: {
+    position: "absolute",
+    bottom: 30,
+    left: 30,
+    width: 40,
+    height: 40,
+    borderBottomWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: "#3B82F6",
+    borderBottomLeftRadius: 8,
+  },
+  cornerBR: {
+    position: "absolute",
+    bottom: 30,
+    right: 30,
+    width: 40,
+    height: 40,
+    borderBottomWidth: 4,
+    borderRightWidth: 4,
+    borderColor: "#3B82F6",
+    borderBottomRightRadius: 8,
+  },
+  hintContainer: {
+    marginTop: 25,
+    alignItems: "center",
+  },
+  scanHint: {
+    color: "#64748B",
+    textAlign: "center",
+    fontSize: 15,
+    letterSpacing: 0.3,
+  },
+  resultContainer: {
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 30,
+    paddingBottom: 40,
+  },
+  card: {
+    backgroundColor: "#1E293B",
+    width: "100%",
+    borderRadius: 24,
+    alignItems: "center",
+    paddingVertical: 35,
+    paddingHorizontal: 20,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    marginBottom: 25,
+  },
+  photoContainer: {
+    position: "relative",
+    marginBottom: 20,
+  },
+  profilePhoto: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    borderWidth: 4,
+    borderColor: "#3B82F6",
+  },
+  verifiedBadge: {
+    position: "absolute",
+    bottom: 5,
+    right: 5,
+    backgroundColor: "#22C55E",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 3,
+    borderColor: "#1E293B",
+  },
+  verifiedText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  name: {
+    color: "#F1F5F9",
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  roll: {
+    color: "#94A3B8",
+    fontSize: 17,
+    fontWeight: "500",
+    marginBottom: 15,
+  },
+  timeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#0F172A",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  timeIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  time: {
+    color: "#64748B",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  actionContainer: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  actionTitle: {
+    color: "#94A3B8",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 15,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 15,
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 18,
+    borderRadius: 16,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  entryBtn: {
+    backgroundColor: "#22C55E",
+  },
+  exitBtn: {
+    backgroundColor: "#EF4444",
+  },
+  actionIcon: {
+    color: "#FFF",
+    fontSize: 22,
+    fontWeight: "700",
+    marginRight: 8,
+  },
+  actionBtnText: {
+    color: "#FFF",
+    fontWeight: "700",
+    fontSize: 17,
+    letterSpacing: 0.5,
+  },
   scanAgainBtn: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#334155",
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 14,
-    marginTop: 10,
+    borderWidth: 1.5,
+    borderColor: "#475569",
   },
-  btnText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  scanAgainText: {
+    color: "#94A3B8",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  btnText: {
+    color: "#FFF",
+    fontWeight: "700",
+    fontSize: 16,
+    textAlign: "center",
+    letterSpacing: 0.5,
+  },
 });
