@@ -78,3 +78,28 @@ exports.getLogsByRollNumber = async (req, res) => {
   }
 };
 
+
+
+exports.getAllLogs = async (req, res) => {
+  try {
+    console.log("Fetch All Logs Request");
+    const logs = await Log.find({})
+      .sort({ timestamp: -1 }) // latest first
+      .populate("scannedBy", "name email employeeId") // optional: show guard info
+      .lean();
+    console.log(`Total logs found: ${logs.length}`);
+
+    return res.status(200).json({
+      success: true,
+      count: logs.length,
+      data: logs,
+    });
+
+  } catch (err) {
+    console.error("Get All Logs Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch logs",
+    });
+  }
+};
