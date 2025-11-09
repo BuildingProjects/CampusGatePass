@@ -17,8 +17,8 @@ import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   API_BASE_URL,
-  IMAGEKIT_PUBLIC_KEY,
-  IMAGEKIT_UPLOAD_ENDPOINT,
+  CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_UPLOAD_PRESET,
 } from "@env";
 import { ActionSheetIOS, Platform } from "react-native";
 import { CommonActions } from "@react-navigation/native";
@@ -32,10 +32,8 @@ export default function ProfileCompletionScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // 📸 Fixed Pick Image Function
   const pickImage = async () => {
     console.log("Image Picking...");
-
     try {
       // ✅ iOS Style Picker
       if (Platform.OS === "ios") {
@@ -151,36 +149,33 @@ export default function ProfileCompletionScreen({ navigation }) {
   };
 
   // ☁️ Upload to ImageKit
-  const uploadToImageKit = async (uri) => {
+  const uploadToCloudinary = async (uri) => {
     try {
       setUploading(true);
+      const data = new FormData();
       const filename = uri.split("/").pop();
       const type = `image/${filename.split(".").pop()}`;
 
-      const formData = new FormData();
-      formData.append("file", {
-        uri,
-        name: filename,
-        type,
-      });
-      formData.append("fileName", filename);
-      formData.append("publicKey", IMAGEKIT_PUBLIC_KEY);
-      formData.append("useUniqueFileName", "true");
+      data.append("file", { uri, name: filename, type });
+      data.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+      data.append("cloud_name", CLOUDINARY_CLOUD_NAME);
 
-      const res = await fetch(IMAGEKIT_UPLOAD_ENDPOINT, {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: data,
+        }
+      );
 
-      const data = await res.json();
-      if (data.url) {
-        return data.url;
-      } else {
-        throw new Error("Upload failed: " + JSON.stringify(data));
-      }
+      const result = await res.json();
+      console.log("✅ Cloudinary upload result:", result);
+
+      if (result.secure_url) return result.secure_url;
+      throw new Error(result.error?.message || "Upload failed");
     } catch (error) {
-      console.error("ImageKit Upload Error:", error);
-      Alert.alert("Upload Failed", "Unable to upload image to ImageKit.");
+      console.error("Cloudinary Upload Error:", error);
+      Alert.alert("Upload Failed", "Could not upload image to Cloudinary.");
       return null;
     } finally {
       setUploading(false);
@@ -205,12 +200,12 @@ export default function ProfileCompletionScreen({ navigation }) {
       }
 
       // Upload image first
-      const uploadedUrl = await uploadToImageKit(photoUri);
+      const uploadedUrl = await uploadToCloudinary(photoUri);
       if (!uploadedUrl) return;
 
       // Send to backend
       const response = await fetch(
-        `${API_BASE_URL}/api/student/complete-profile`,
+        `${API_BASE_URL}/api/student/completeprofile`,
         {
           method: "POST",
           headers: {
