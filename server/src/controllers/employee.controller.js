@@ -10,11 +10,10 @@ exports.registerEmployee = async (req, res) => {
     if (!name || !email || !employeeId || !password || !role) {
       return res.status(400).json({
         success: false,
-        message: "All fields (name, email, employeeId, password, role) are required",
+        message:
+          "All fields (name, email, employeeId, password, role) are required",
       });
     }
-
-
 
     const emailLower = email.toLowerCase();
 
@@ -68,7 +67,6 @@ exports.registerEmployee = async (req, res) => {
         role,
       },
     });
-
   } catch (err) {
     console.error("Register Employee Error:", err);
     return res.status(500).json({
@@ -78,12 +76,9 @@ exports.registerEmployee = async (req, res) => {
   }
 };
 
-
-
-
 exports.getEmployees = async (req, res) => {
   try {
-    const { role } = req.body;
+    const { role } = req.query;
 
     if (!role) {
       return res.status(400).json({
@@ -113,7 +108,6 @@ exports.getEmployees = async (req, res) => {
       count: employees.length,
       data: employees,
     });
-
   } catch (err) {
     console.error("Get Employees Error:", err);
     return res.status(500).json({

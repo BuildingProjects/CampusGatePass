@@ -44,16 +44,53 @@ export default function ManageGuardsScreen({ navigation }) {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/admin/guards`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // ✅ Use query parameter just like the fetchAdmins function
+      const response = await fetch(
+        `${API_BASE_URL}/api/admin/getemployees?role=${encodeURIComponent(
+          "guard"
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setGuards(data.data || []);
-      } else {
-        Alert.alert("Error", data.message || "Failed to fetch guards");
+      const text = await response.text();
+      console.log("🔍 Fetch Guards Response:", text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        Alert.alert("Server Error", "Invalid response format from backend.");
+        return;
       }
+
+      // ✅ Handle backend errors clearly
+      if (!response.ok || !data.success) {
+        switch (data.message) {
+          case "Authorization token missing":
+            Alert.alert("Error", "Token missing. Please log in again.");
+            break;
+          case "Invalid or expired token":
+            Alert.alert("Session Expired", "Please log in again.");
+            break;
+          case "Access denied. Admin only.":
+            Alert.alert("Access Denied", "Only admins can view guard data.");
+            break;
+          case "Role is required (guard or admin)":
+            Alert.alert("Error", "Role is required to fetch guards.");
+            break;
+          default:
+            Alert.alert("Error", data.message || "Failed to fetch guards.");
+        }
+        return;
+      }
+
+      // ✅ Success — set data
+      setGuards(data.data || []);
     } catch (error) {
       console.error("❌ Fetch Guards Error:", error);
       Alert.alert("Network Error", "Unable to connect to the server.");

@@ -46,15 +46,18 @@ export default function ManageAdminScreen({ navigation }) {
         return;
       }
 
-      // API call to get all employees with role "admin"
-      const response = await fetch(`${API_BASE_URL}/api/admin/getemployees`, {
-        method: "POST", // use POST because we’re sending role in body
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ role: "admin" }),
-      });
+      // ✅ Use query parameter like in your getlog request
+      const response = await fetch(
+        `${API_BASE_URL}/api/admin/getemployees?role=${encodeURIComponent(
+          "admin"
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       const text = await response.text();
       console.log("🔍 Fetch Admins Response:", text);
@@ -63,11 +66,11 @@ export default function ManageAdminScreen({ navigation }) {
       try {
         data = JSON.parse(text);
       } catch (err) {
-        Alert.alert("Server Error", "Invalid response format from server.");
+        Alert.alert("Server Error", "Invalid response format from backend.");
         return;
       }
 
-      // Handle backend responses
+      // ✅ Handle backend responses properly
       if (!response.ok || !data.success) {
         switch (data.message) {
           case "Authorization token missing":
@@ -88,7 +91,7 @@ export default function ManageAdminScreen({ navigation }) {
         return;
       }
 
-      // Success ✅
+      // ✅ On success
       setAdmins(data.data || []);
     } catch (error) {
       console.error("❌ Fetch Admins Error:", error);
