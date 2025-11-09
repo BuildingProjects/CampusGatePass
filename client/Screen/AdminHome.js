@@ -101,7 +101,7 @@ export default function AdminHome({ navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size='large' color='#3B82F6' />
         <Text style={styles.loadingText}>Loading admin dashboard...</Text>
       </View>
     );
@@ -258,7 +258,7 @@ export default function AdminHome({ navigation }) {
             <Text style={styles.logoutText}>Sign Out</Text>
           </Pressable>
 
-          <Text style={styles.footerText}>Campus Guard System v1.0</Text>
+          {/* <Text style={styles.footerText}>Campus Guard System v1.0</Text> */}
         </ScrollView>
       </SafeAreaView>
     </>
