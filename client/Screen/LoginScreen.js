@@ -44,8 +44,8 @@ export default function LoginScreen({ route, navigation }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          role: "student",
-          // role: role.toLowerCase(),
+          // role: "student",
+          role: role.toLowerCase(),
           email: email.trim(),
           password,
         }),
@@ -131,8 +131,7 @@ export default function LoginScreen({ route, navigation }) {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            // routes: [{ name: "StudentHome" }], // token retrieved from AsyncStorage later
-            routes: [{ name: "AdminHome" }], // token retrieved from AsyncStorage later
+            routes: [{ name: "StudentHome" }], // token retrieved from AsyncStorage later
           })
         );
       }
