@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import StudentProfile from "./StudentProfile";
-
+import { useNavigation } from "@react-navigation/native";
 const Tab = createBottomTabNavigator();
 import { API_BASE_URL } from "@env"; // 🔹 Change to your server IP when on device
 function EmptyScreen() {
@@ -23,7 +23,7 @@ function EmptyScreen() {
 function StudentDashboard() {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const navigation = useNavigation();
   const fetchStudentProfile = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
@@ -82,10 +82,10 @@ function StudentDashboard() {
             Alert.alert("Verification Required", "Please verify your account.");
             break;
           case "Profile not completed. Please complete your profile first.":
-            Alert.alert(
-              "Incomplete Profile",
-              "Complete your profile to continue."
-            );
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "ProfileCompletionScreen" }],
+            });
             break;
           case "Student not found":
             Alert.alert("Error", "Student record not found.");
