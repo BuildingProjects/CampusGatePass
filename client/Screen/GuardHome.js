@@ -104,9 +104,8 @@ export default function GuardHome() {
             color={studentData?.valid ? "#22C55E" : "#EF4444"}
           />
           <Text style={styles.resultText}>
-            {studentData?.valid ? "Access Granted ✅" : "Invalid QR ❌"}
+            {studentData?.valid ? "Access Granted" : "Invalid QR"}
           </Text>
-
           {studentData && (
             <View style={styles.detailsBox}>
               <Text style={styles.detailLabel}>Name:</Text>
@@ -125,7 +124,7 @@ export default function GuardHome() {
           </Pressable>
         </View>
       )}
-
+      
       {/* Activity Log */}
       <View style={styles.logContainer}>
         <Text style={styles.logTitle}>Recent Scans</Text>
