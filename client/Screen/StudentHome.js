@@ -38,7 +38,6 @@ function StudentDashboard() {
 
       console.log("Fetching the profile...");
 
-      // ✅ Ensure full backend path matches your Express route
       const response = await fetch(`${API_BASE_URL}/api/student/getprofile`, {
         method: "GET",
         headers: {
@@ -46,15 +45,14 @@ function StudentDashboard() {
         },
       });
 
-      // ✅ Log raw response text for debugging
       const text = await response.text();
-      console.log("🔍 Raw profile response:", text);
+      console.log("Raw profile response:", text);
 
       let result;
       try {
         result = JSON.parse(text);
       } catch (err) {
-        console.error("❌ JSON Parse Error:", err);
+        console.error("JSON Parse Error:", err);
         Alert.alert(
           "Server Error",
           "Received invalid response from server. Check backend or API_BASE_URL."
@@ -63,7 +61,6 @@ function StudentDashboard() {
         return;
       }
 
-      // ✅ Handle backend-defined responses
       if (!result.success) {
         switch (result.message) {
           case "Authorization token missing":
@@ -97,8 +94,7 @@ function StudentDashboard() {
         return;
       }
 
-      // ✅ Success — set data in state
-      console.log("✅ Profile loaded successfully:", result.data);
+      console.log("Profile loaded successfully:", result.data);
       setStudent(result.data);
     } catch (error) {
       console.error("Profile Fetch Error:", error);
@@ -166,7 +162,6 @@ function StudentDashboard() {
 export default function StudentHome({ navigation }) {
   const handleLogout = async () => {
     await AsyncStorage.removeItem("token");
-    Alert.alert("Logout", "You have been signed out.");
     navigation.replace("RoleSelector");
   };
 
@@ -187,15 +182,33 @@ export default function StudentHome({ navigation }) {
       })}
     >
       <Tab.Screen name='Home' component={StudentDashboard} />
-      <Tab.Screen name='Profile' component={StudentProfile} />
+      {/* <Tab.Screen name='Profile' component={StudentProfile} /> */}
       <Tab.Screen
         name='Logout'
         component={EmptyScreen}
         listeners={{
           tabPress: (e) => {
-            e.preventDefault();
-            handleLogout();
+            e.preventDefault(); // Prevent tab navigation
+            Alert.alert(
+              "Logout",
+              "Are you sure you want to sign out?",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Yes, Logout",
+                  style: "destructive",
+                  onPress: () => handleLogout(), // 👈 call your logout logic
+                },
+              ],
+              { cancelable: true }
+            );
           },
+        }}
+        options={{
+          tabBarLabel: "Logout",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name='log-out-outline' size={size} color={color} />
+          ),
         }}
       />
     </Tab.Navigator>
