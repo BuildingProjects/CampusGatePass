@@ -134,7 +134,7 @@ export default function AdminHome({ navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size='large' color='#3B82F6' />
+        <ActivityIndicator size="large" color="#3B82F6" />
         <Text style={styles.loadingText}>Loading admin dashboard...</Text>
       </View>
     );
@@ -150,7 +150,7 @@ export default function AdminHome({ navigation }) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor='#3B82F6'
+            tintColor="#3B82F6"
             colors={["#3B82F6"]}
           />
         }
@@ -170,9 +170,9 @@ export default function AdminHome({ navigation }) {
               }
             >
               <Ionicons
-                name='person-circle-outline'
+                name="person-circle-outline"
                 size={48}
-                color='#3B82F6'
+                color="#3B82F6"
               />
             </Pressable>
           </View>
@@ -184,7 +184,7 @@ export default function AdminHome({ navigation }) {
           <View style={styles.statsGrid}>
             <View style={[styles.statCard, styles.primaryCard]}>
               <View style={styles.statIconContainer}>
-                <Ionicons name='scan-outline' size={24} color='#3B82F6' />
+                <Ionicons name="scan-outline" size={24} color="#3B82F6" />
               </View>
               <Text style={styles.statNumber}>{stats.todayScans}</Text>
               <Text style={styles.statLabel}>Total Scans</Text>
@@ -210,13 +210,13 @@ export default function AdminHome({ navigation }) {
           {/* Guards Status */}
           <View style={styles.guardsStatus}>
             <View style={styles.guardStatItem}>
-              <Ionicons name='shield-checkmark' size={20} color='#22C55E' />
+              <Ionicons name="shield-checkmark" size={20} color="#22C55E" />
               <Text style={styles.guardStatText}>
                 {stats.activeGuards} Active Guards
               </Text>
             </View>
             <View style={styles.guardStatItem}>
-              <Ionicons name='people-outline' size={20} color='#94A3B8' />
+              <Ionicons name="people-outline" size={20} color="#94A3B8" />
               <Text style={styles.guardStatText}>
                 {stats.totalGuards} Total Guards
               </Text>
@@ -234,9 +234,9 @@ export default function AdminHome({ navigation }) {
           >
             <View style={styles.actionIconBg}>
               <Ionicons
-                name='document-text-outline'
+                name="document-text-outline"
                 size={24}
-                color='#3B82F6'
+                color="#3B82F6"
               />
             </View>
             <View style={styles.actionContent}>
@@ -245,7 +245,7 @@ export default function AdminHome({ navigation }) {
                 Check complete activity history
               </Text>
             </View>
-            <Ionicons name='chevron-forward' size={20} color='#64748B' />
+            <Ionicons name="chevron-forward" size={20} color="#64748B" />
           </Pressable>
 
           <Pressable
@@ -254,9 +254,9 @@ export default function AdminHome({ navigation }) {
           >
             <View style={styles.actionIconBg}>
               <Ionicons
-                name='shield-checkmark-outline'
+                name="shield-checkmark-outline"
                 size={24}
-                color='#22C55E'
+                color="#22C55E"
               />
             </View>
             <View style={styles.actionContent}>
@@ -265,7 +265,7 @@ export default function AdminHome({ navigation }) {
                 Add, edit or remove guards
               </Text>
             </View>
-            <Ionicons name='chevron-forward' size={20} color='#64748B' />
+            <Ionicons name="chevron-forward" size={20} color="#64748B" />
           </Pressable>
 
           <Pressable
@@ -275,7 +275,7 @@ export default function AdminHome({ navigation }) {
             }
           >
             <View style={styles.actionIconBg}>
-              <Ionicons name='stats-chart-outline' size={24} color='#F59E0B' />
+              <Ionicons name="stats-chart-outline" size={24} color="#F59E0B" />
             </View>
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>Generate Reports</Text>
@@ -283,7 +283,7 @@ export default function AdminHome({ navigation }) {
                 Export activity reports
               </Text>
             </View>
-            <Ionicons name='chevron-forward' size={20} color='#64748B' />
+            <Ionicons name="chevron-forward" size={20} color="#64748B" />
           </Pressable>
 
           <Pressable
@@ -293,7 +293,7 @@ export default function AdminHome({ navigation }) {
             }
           >
             <View style={styles.actionIconBg}>
-              <Ionicons name='settings-outline' size={24} color='#8B5CF6' />
+              <Ionicons name="settings-outline" size={24} color="#8B5CF6" />
             </View>
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>System Settings</Text>
@@ -301,13 +301,13 @@ export default function AdminHome({ navigation }) {
                 Configure system preferences
               </Text>
             </View>
-            <Ionicons name='chevron-forward' size={20} color='#64748B' />
+            <Ionicons name="chevron-forward" size={20} color="#64748B" />
           </Pressable>
         </View>
 
         {/* Logout Button */}
         <Pressable style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name='log-out-outline' size={20} color='#EF4444' />
+          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
           <Text style={styles.logoutText}>Sign Out</Text>
         </Pressable>
 

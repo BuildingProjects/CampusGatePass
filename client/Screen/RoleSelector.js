@@ -17,7 +17,7 @@ export default function RoleSelector({ navigation }) {
   return (
     <LinearGradient colors={["#0F172A", "#1E293B"]} style={styles.gradient}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle='light-content' />
+        <StatusBar barStyle="light-content" />
         <View style={styles.container}>
           <Text style={styles.title}>Campus Gate Pass</Text>
           <Text style={styles.subtitle}>Select your role to continue</Text>
