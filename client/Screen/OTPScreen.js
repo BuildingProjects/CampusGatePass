@@ -109,10 +109,22 @@ export default function OTPScreen({ route, navigation }) {
       Alert.alert("Success", "Account verified successfully!");
 
       if (role === "student") {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "StudentHome" }],
-        });
+        const studentData = data.data || {};
+        const { isProfileCompleted } = studentData;
+
+        if (!isProfileCompleted) {
+          // ✅ Redirect to Complete Profile screen
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "ProfileCompletionScreen" }],
+          });
+        } else {
+          // ✅ Profile already complete → Go to StudentHome
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "StudentHome" }],
+          });
+        }
       } else if (role === "guard") navigation.replace("GuardHome");
       else navigation.replace("AdminHome");
     } catch (error) {

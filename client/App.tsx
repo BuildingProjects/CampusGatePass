@@ -8,6 +8,7 @@ import StudentHome from "./Screen/StudentHome";
 import StudentProfile from "./Screen/StudentProfile";
 import GuardHome from "./Screen/GuardHome";
 import OTPScreen from "./Screen/OTPScreen";
+import ProfileCompletionScreen from "./Screen/ProfileCompletionScreen";
 
 // Screens
 
@@ -63,6 +64,11 @@ export default function App() {
         <Stack.Screen
           name='OTPScreen'
           component={OTPScreen}
+          options={{ headerTitle: "" }}
+        />
+        <Stack.Screen
+          name='ProfileCompletionScreen'
+          component={ProfileCompletionScreen}
           options={{ headerTitle: "" }}
         />
       </Stack.Navigator>
