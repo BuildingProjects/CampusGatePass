@@ -1,3 +1,5 @@
+//---------------------Author Roshan---------------------------//
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -7,66 +9,148 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import StudentProfile from "./StudentProfile";
 
 const Tab = createBottomTabNavigator();
-
+import { API_BASE_URL } from "@env"; // 🔹 Change to your server IP when on device
+function EmptyScreen() {
+  return null;
+}
 // ---------- STUDENT DASHBOARD ----------
 function StudentDashboard() {
-  const [student] = useState({
-    name: "Roshan Kumar",
-    roll: "CSE2026012",
-    photo: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-  });
-
-  const [qrUrl, setQrUrl] = useState("");
+  const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Simulate fetching QR from backend
-    const fetchQr = async () => {
-      try {
-        // 🔹 Replace this later with your real backend URL
-        // const response = await fetch(`https://your-backend.com/api/student/${student.roll}/qr`);
-        // const data = await response.json();
-        // setQrUrl(data.qr_url);
-
-        // 🔹 Temporary QR code (static for now)
-        const tempQr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=Name:${encodeURIComponent(
-          student.name
-        )}%0ARoll:${encodeURIComponent(student.roll)}`;
-        setQrUrl(tempQr);
-      } catch (error) {
-        Alert.alert("Error", "Failed to load QR code.");
-        console.error("QR Fetch Error:", error);
-      } finally {
+  const fetchStudentProfile = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        Alert.alert(
+          "Error",
+          "Authorization token missing. Please log in again."
+        );
         setLoading(false);
+        return;
       }
-    };
 
-    fetchQr();
+      console.log("Fetching the profile...");
+
+      // ✅ Ensure full backend path matches your Express route
+      const response = await fetch(`${API_BASE_URL}/api/student/getprofile`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // ✅ Log raw response text for debugging
+      const text = await response.text();
+      console.log("🔍 Raw profile response:", text);
+
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch (err) {
+        console.error("❌ JSON Parse Error:", err);
+        Alert.alert(
+          "Server Error",
+          "Received invalid response from server. Check backend or API_BASE_URL."
+        );
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Handle backend-defined responses
+      if (!result.success) {
+        switch (result.message) {
+          case "Authorization token missing":
+            Alert.alert("Error", "Token missing. Please log in again.");
+            break;
+          case "Invalid or expired token":
+            Alert.alert("Session Expired", "Please log in again.");
+            break;
+          case "Access denied. Students only.":
+            Alert.alert(
+              "Access Denied",
+              "Only students can access this section."
+            );
+            break;
+          case "Account not verified":
+            Alert.alert("Verification Required", "Please verify your account.");
+            break;
+          case "Profile not completed. Please complete your profile first.":
+            Alert.alert(
+              "Incomplete Profile",
+              "Complete your profile to continue."
+            );
+            break;
+          case "Student not found":
+            Alert.alert("Error", "Student record not found.");
+            break;
+          default:
+            Alert.alert("Error", result.message || "Something went wrong.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Success — set data in state
+      console.log("✅ Profile loaded successfully:", result.data);
+      setStudent(result.data);
+    } catch (error) {
+      console.error("Profile Fetch Error:", error);
+      Alert.alert(
+        "Network Error",
+        "Failed to connect to the server. Please ensure your backend is running and accessible."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudentProfile();
   }, []);
+
+  if (loading) {
+    return (
+      <View style={[styles.screen, { justifyContent: "center" }]}>
+        <ActivityIndicator size='large' color='#2563EB' />
+        <Text style={{ color: "#fff", marginTop: 10 }}>Loading profile...</Text>
+      </View>
+    );
+  }
+
+  if (!student) {
+    return (
+      <View style={styles.screen}>
+        <Text style={{ color: "#EF4444", fontSize: 16 }}>
+          Failed to load student data.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
-      {/* Student Info */}
+      {/* Profile Section */}
       <View style={styles.profileSection}>
-        <Image source={{ uri: student.photo }} style={styles.avatar} />
+        <Image source={{ uri: student.profilePhoto }} style={styles.avatar} />
         <Text style={styles.name}>{student.name}</Text>
-        <Text style={styles.roll}>Roll No: {student.roll}</Text>
+        <Text style={styles.roll}>Roll No: {student.rollNumber}</Text>
+        <Text style={styles.roll}>Batch: {student.batch}</Text>
+        <Text style={styles.roll}>Dept: {student.department}</Text>
       </View>
 
       {/* QR Section */}
       <View style={styles.qrContainer}>
         <Text style={styles.qrLabel}>Your Campus QR Pass</Text>
-
-        {loading ? (
-          <ActivityIndicator size='large' color='#2563EB' />
-        ) : qrUrl ? (
+        {student.qrCode ? (
           <Image
-            source={{ uri: qrUrl }}
+            source={{ uri: student.qrCode }}
             style={styles.qrImage}
             resizeMode='contain'
           />
@@ -80,11 +164,10 @@ function StudentDashboard() {
 
 // ---------- MAIN COMPONENT ----------
 export default function StudentHome({ navigation }) {
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign Out", onPress: () => navigation.replace("RoleSelector") },
-    ]);
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem("token");
+    Alert.alert("Logout", "You have been signed out.");
+    navigation.replace("RoleSelector");
   };
 
   return (
@@ -107,7 +190,7 @@ export default function StudentHome({ navigation }) {
       <Tab.Screen name='Profile' component={StudentProfile} />
       <Tab.Screen
         name='Logout'
-        component={() => null}
+        component={EmptyScreen}
         listeners={{
           tabPress: (e) => {
             e.preventDefault();

@@ -1,3 +1,5 @@
+//---------------------Author Roshan---------------------------//
+
 import React, { useState } from "react";
 import {
   View,
@@ -14,6 +16,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ Added for token storage
 import { API_BASE_URL } from "@env";
 import { CommonActions } from "@react-navigation/native";
 
@@ -54,7 +57,7 @@ export default function LoginScreen({ route, navigation }) {
       try {
         data = JSON.parse(text);
       } catch (err) {
-        console.error("❌ JSON parse error:", err);
+        console.error("JSON parse error:", err);
         Alert.alert("Server Error", "Invalid server response.");
         return;
       }
@@ -65,6 +68,11 @@ export default function LoginScreen({ route, navigation }) {
       }
 
       const { token, role: userRole, email: userEmail, isVerified } = data.data;
+
+      // ✅ Save token securely for later use
+      await AsyncStorage.setItem("token", token);
+      await AsyncStorage.setItem("role", userRole);
+      await AsyncStorage.setItem("email", userEmail);
 
       // ✅ Student Login Flow
       if (userRole === "student") {
@@ -117,11 +125,12 @@ export default function LoginScreen({ route, navigation }) {
           );
           return;
         }
-        // ✅ Verified student → go to StudentHome & clear stack
+
+        // ✅ Verified student → navigate to StudentHome
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: "StudentHome", params: { token } }],
+            routes: [{ name: "StudentHome" }], // token retrieved from AsyncStorage later
           })
         );
       }
@@ -148,7 +157,7 @@ export default function LoginScreen({ route, navigation }) {
         Alert.alert("Success", `Logged in successfully as ${userRole}`);
       }
     } catch (error) {
-      console.error("💥 Login Error:", error);
+      console.error("Login Error:", error);
       Alert.alert(
         "Network Error",
         "Unable to connect. Please check your internet or backend server."
