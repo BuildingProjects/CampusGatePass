@@ -6,7 +6,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth.routes");
 const logRoutes = require("./routes/log.routes");
 const studentRoutes = require("./routes/student.routes");
-const guardRoutes = require("./routes/guard.routes");
+const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
 app.use(cors());
@@ -17,7 +17,7 @@ connectDB();
 app.use("/api/auth", authRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/log", logRoutes);
-app.use("/api/guard", guardRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get("/", (req, res) =>
   res.send("College Gate Entry System API Running....")
