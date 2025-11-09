@@ -60,14 +60,15 @@ export default function GuardHome({ navigation }) {
 
       <Tab.Screen
         name='Logout'
-        component={() => null}
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
             handleLogout();
           },
         }}
-      />
+      >
+        {() => null}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }
