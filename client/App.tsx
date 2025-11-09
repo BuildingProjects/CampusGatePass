@@ -9,6 +9,7 @@ import StudentProfile from "./Screen/StudentProfile";
 import GuardHome from "./Screen/GuardHome";
 import OTPScreen from "./Screen/OTPScreen";
 import ProfileCompletionScreen from "./Screen/ProfileCompletionScreen";
+import AdminHome from "./Screen/AdminHome";
 
 // Screens
 
@@ -34,6 +35,11 @@ export default function App() {
         <Stack.Screen
           name='SignupScreen'
           component={SignupScreen}
+          options={{ headerTitle: "" }} // ✅ keep header but hide title
+        />
+        <Stack.Screen
+          name='AdminHome'
+          component={AdminHome}
           options={{ headerTitle: "" }} // ✅ keep header but hide title
         />
 
