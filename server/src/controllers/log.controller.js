@@ -15,7 +15,6 @@ exports.createLog = async (req, res) => {
       });
     }
 
-
     const log = await Log.create({
       rollNumber,
       name,
@@ -30,7 +29,6 @@ exports.createLog = async (req, res) => {
       message: `Log recorded: ${action}`,
       data: log,
     });
-
   } catch (err) {
     console.error("Create Log Error:", err);
     return res.status(500).json({
@@ -40,12 +38,9 @@ exports.createLog = async (req, res) => {
   }
 };
 
-
-
-
 exports.getLogsByRollNumber = async (req, res) => {
   try {
-    const { rollNumber } = req.body;
+    const { rollNumber } = req.query;
 
     console.log("Fetch Logs Request for Roll No:", rollNumber);
 
@@ -68,7 +63,6 @@ exports.getLogsByRollNumber = async (req, res) => {
       count: logs.length,
       data: logs,
     });
-
   } catch (err) {
     console.error("Fetch Logs Error:", err);
     return res.status(500).json({
@@ -77,8 +71,6 @@ exports.getLogsByRollNumber = async (req, res) => {
     });
   }
 };
-
-
 
 exports.getAllLogs = async (req, res) => {
   try {
@@ -94,7 +86,6 @@ exports.getAllLogs = async (req, res) => {
       count: logs.length,
       data: logs,
     });
-
   } catch (err) {
     console.error("Get All Logs Error:", err);
     return res.status(500).json({
