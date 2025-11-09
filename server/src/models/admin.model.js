@@ -4,7 +4,7 @@ const adminSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   name: String,
   employeeId: { type: String, unique: true },
-  passwordHash: String,
+  password: String,
 });
 
 module.exports = mongoose.model("Admin", adminSchema);

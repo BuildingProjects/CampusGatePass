@@ -23,7 +23,7 @@ exports.createLog = async (req, res) => {
       scannedBy: req.user.id,
     });
 
-    console.log("✅ Log Saved:", log);
+    console.log("Log Saved:", log);
 
     return res.status(201).json({
       success: true,
@@ -32,10 +32,49 @@ exports.createLog = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("🔥 Create Log Error:", err);
+    console.error("Create Log Error:", err);
     return res.status(500).json({
       success: false,
       message: "Failed to create log",
     });
   }
 };
+
+
+
+
+exports.getLogsByRollNumber = async (req, res) => {
+  try {
+    const { rollNumber } = req.body;
+
+    console.log("Fetch Logs Request for Roll No:", rollNumber);
+
+    if (!rollNumber) {
+      return res.status(400).json({
+        success: false,
+        message: "rollNumber is required",
+      });
+    }
+    const rollNumberUpper = rollNumber.toUpperCase();
+    const logs = await Log.find({ rollNumber: rollNumberUpper })
+      .sort({ timestamp: -1 }) // newest first
+      .populate("scannedBy", "name email") // optional: fetch guard info
+      .lean(); // return plain JSON
+
+    console.log(`Found ${logs.length} logs for ${rollNumber}`);
+
+    return res.status(200).json({
+      success: true,
+      count: logs.length,
+      data: logs,
+    });
+
+  } catch (err) {
+    console.error("Fetch Logs Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch logs",
+    });
+  }
+};
+

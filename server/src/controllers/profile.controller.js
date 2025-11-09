@@ -68,7 +68,7 @@ exports.completeProfile = async (req, res) => {
 
     // ✅ Update student profile
     student.name = name;
-    student.rollNumber = rollNumber;
+    student.rollNumber = rollNumber.toUpperCase();
     student.department = department;
     student.batch = batch;
     student.profilePhoto = profilePhoto;
