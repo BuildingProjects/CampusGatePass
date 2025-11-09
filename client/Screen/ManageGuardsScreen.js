@@ -6,31 +6,32 @@ import {
   StyleSheet,
   Pressable,
   Alert,
-  SafeAreaView,
   ActivityIndicator,
   ScrollView,
   RefreshControl,
   TextInput,
   Modal,
+  Keyboard,
+  Platform,
+  TouchableWithoutFeedback,
+  KeyboardAvoidingView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ManageGuardsScreen({ navigation }) {
   const [guards, setGuards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [selectedGuard, setSelectedGuard] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    phone: "",
+    employeeId: "",
     password: "",
   });
-
   useEffect(() => {
     fetchGuards();
   }, []);
@@ -44,9 +45,7 @@ export default function ManageGuardsScreen({ navigation }) {
       }
 
       const response = await fetch(`${API_BASE_URL}/api/admin/guards`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await response.json();
@@ -70,131 +69,111 @@ export default function ManageGuardsScreen({ navigation }) {
   };
 
   const openAddModal = () => {
-    setEditMode(false);
-    setSelectedGuard(null);
     setFormData({ name: "", email: "", phone: "", password: "" });
     setModalVisible(true);
   };
 
-  const openEditModal = (guard) => {
-    setEditMode(true);
-    setSelectedGuard(guard);
-    setFormData({
-      name: guard.name,
-      email: guard.email,
-      phone: guard.phone || "",
-      password: "",
-    });
-    setModalVisible(true);
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.name || !formData.email) {
-      Alert.alert("Validation Error", "Name and email are required");
-      return;
-    }
-
-    if (!editMode && !formData.password) {
-      Alert.alert("Validation Error", "Password is required for new guards");
+  const handleAddGuard = async () => {
+    // 🔹 Validate form inputs
+    if (!formData.name || !formData.email || !formData.password) {
+      Alert.alert(
+        "Validation Error",
+        "Name, email, and password are required."
+      );
       return;
     }
 
     try {
       const token = await AsyncStorage.getItem("token");
-      const url = editMode
-        ? `${API_BASE_URL}/api/admin/guards/${selectedGuard._id}`
-        : `${API_BASE_URL}/api/admin/guards`;
 
-      const response = await fetch(url, {
-        method: editMode ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-      if (response.ok && data.success) {
+      // 🔹 Check for token
+      if (!token) {
         Alert.alert(
-          "Success",
-          editMode ? "Guard updated successfully" : "Guard added successfully"
+          "Authorization Error",
+          "Authorization token missing. Please log in again."
         );
-        setModalVisible(false);
-        fetchGuards();
-      } else {
-        Alert.alert("Error", data.message || "Operation failed");
+        return;
       }
-    } catch (error) {
-      console.error("❌ Submit Error:", error);
-      Alert.alert("Network Error", "Unable to connect to the server.");
-    }
-  };
 
-  const handleDelete = (guard) => {
-    Alert.alert(
-      "Delete Guard",
-      `Are you sure you want to remove ${guard.name}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const token = await AsyncStorage.getItem("token");
-              const response = await fetch(
-                `${API_BASE_URL}/api/admin/guards/${guard._id}`,
-                {
-                  method: "DELETE",
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
-              );
+      // 🔹 Prepare request body according to new API spec
+      const payload = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        employeeId: formData.employeeId.trim(), // You can customize this
+        password: formData.password,
+        role: "guard",
+      };
 
-              const data = await response.json();
-              if (response.ok && data.success) {
-                Alert.alert("Success", "Guard removed successfully");
-                fetchGuards();
-              } else {
-                Alert.alert("Error", data.message || "Failed to delete guard");
-              }
-            } catch (error) {
-              console.error("❌ Delete Error:", error);
-              Alert.alert("Network Error", "Unable to connect to the server.");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const toggleGuardStatus = async (guard) => {
-    try {
-      const token = await AsyncStorage.getItem("token");
       const response = await fetch(
-        `${API_BASE_URL}/api/admin/guards/${guard._id}/toggle-status`,
+        `${API_BASE_URL}/api/admin/registeremployee`,
         {
-          method: "PATCH",
+          method: "POST",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+          body: JSON.stringify(payload),
         }
       );
 
-      const data = await response.json();
-      if (response.ok && data.success) {
-        Alert.alert(
-          "Success",
-          `Guard ${data.data.isActive ? "activated" : "deactivated"}`
-        );
-        fetchGuards();
-      } else {
-        Alert.alert("Error", data.message || "Failed to update status");
+      const text = await response.text();
+      console.log("🔍 Register Employee Raw Response:", text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("❌ JSON Parse Error:", err);
+        Alert.alert("Server Error", "Invalid response from the server.");
+        return;
       }
+
+      // 🔹 Handle backend-defined responses
+      if (!response.ok || !data.success) {
+        switch (data.message) {
+          case "Authorization token missing":
+            Alert.alert(
+              "Error",
+              "Authorization token missing. Please log in again."
+            );
+            break;
+
+          case "Invalid or expired token":
+            Alert.alert("Session Expired", "Please log in again.");
+            break;
+
+          case "Access denied. Admin only.":
+            Alert.alert(
+              "Access Denied",
+              "Only admins can register new employees."
+            );
+            break;
+
+          case "All fields (name, email, employeeId, password, role) are required":
+            Alert.alert("Validation Error", "Please fill all required fields.");
+            break;
+
+          case "User with this email or employee ID already exists":
+            Alert.alert(
+              "Duplicate Entry",
+              "A guard with this email or ID already exists."
+            );
+            break;
+
+          default:
+            Alert.alert("Error", data.message || "Something went wrong.");
+        }
+        return;
+      }
+
+      // ✅ Success
+      Alert.alert("Success", "Guard registered successfully!");
+      console.log("✅ Guard Registered:", data.data);
+
+      setModalVisible(false);
+      fetchGuards();
     } catch (error) {
-      console.error("❌ Toggle Status Error:", error);
+      console.error("❌ Add Guard Error:", error);
       Alert.alert("Network Error", "Unable to connect to the server.");
     }
   };
@@ -202,7 +181,7 @@ export default function ManageGuardsScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size='large' color='#3B82F6' />
         <Text style={styles.loadingText}>Loading guards...</Text>
       </View>
     );
@@ -210,14 +189,14 @@ export default function ManageGuardsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.screen}>
+      <View style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color="#F1F5F9" />
+            <Ionicons name='arrow-back' size={24} color='#F1F5F9' />
           </Pressable>
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>Manage Guards</Text>
@@ -226,7 +205,7 @@ export default function ManageGuardsScreen({ navigation }) {
             </Text>
           </View>
           <Pressable style={styles.addButton} onPress={openAddModal}>
-            <Ionicons name="add" size={24} color="#FFF" />
+            <Ionicons name='add' size={24} color='#FFF' />
           </Pressable>
         </View>
 
@@ -239,7 +218,7 @@ export default function ManageGuardsScreen({ navigation }) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#3B82F6"
+              tintColor='#3B82F6'
               colors={["#3B82F6"]}
             />
           }
@@ -256,199 +235,120 @@ export default function ManageGuardsScreen({ navigation }) {
             guards.map((guard, index) => (
               <View key={guard._id || index} style={styles.guardCard}>
                 <View style={styles.guardHeader}>
-                  <View style={styles.guardInfo}>
-                    <View style={styles.guardNameRow}>
-                      <Text style={styles.guardName}>{guard.name}</Text>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          {
-                            backgroundColor: guard.isActive
-                              ? "rgba(34,197,94,0.15)"
-                              : "rgba(239,68,68,0.15)",
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.statusText,
-                            { color: guard.isActive ? "#22C55E" : "#EF4444" },
-                          ]}
-                        >
-                          {guard.isActive ? "Active" : "Inactive"}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.guardDetail}>
-                      <Ionicons name="mail-outline" size={14} color="#64748B" />
-                      <Text style={styles.guardDetailText}>{guard.email}</Text>
-                    </View>
-                    {guard.phone && (
-                      <View style={styles.guardDetail}>
-                        <Ionicons
-                          name="call-outline"
-                          size={14}
-                          color="#64748B"
-                        />
-                        <Text style={styles.guardDetailText}>
-                          {guard.phone}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-                <View style={styles.guardActions}>
-                  <Pressable
-                    style={[
-                      styles.actionButton,
-                      {
-                        backgroundColor: guard.isActive
-                          ? "rgba(239,68,68,0.1)"
-                          : "rgba(34,197,94,0.1)",
-                      },
-                    ]}
-                    onPress={() => toggleGuardStatus(guard)}
-                  >
-                    <Ionicons
-                      name={guard.isActive ? "pause" : "play"}
-                      size={16}
-                      color={guard.isActive ? "#EF4444" : "#22C55E"}
-                    />
-                    <Text
-                      style={[
-                        styles.actionButtonText,
-                        { color: guard.isActive ? "#EF4444" : "#22C55E" },
-                      ]}
-                    >
-                      {guard.isActive ? "Deactivate" : "Activate"}
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={[
-                      styles.actionButton,
-                      { backgroundColor: "rgba(59,130,246,0.1)" },
-                    ]}
-                    onPress={() => openEditModal(guard)}
-                  >
-                    <Ionicons name="pencil" size={16} color="#3B82F6" />
-                    <Text
-                      style={[styles.actionButtonText, { color: "#3B82F6" }]}
-                    >
-                      Edit
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={styles.deleteButton}
-                    onPress={() => handleDelete(guard)}
-                  >
-                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                  </Pressable>
+                  <Text style={styles.guardName}>{guard.name}</Text>
+                  <Text style={styles.guardEmail}>{guard.email}</Text>
+                  {guard.phone && (
+                    <Text style={styles.guardPhone}>📞 {guard.phone}</Text>
+                  )}
                 </View>
               </View>
             ))
           )}
         </ScrollView>
 
-        {/* Add/Edit Modal */}
+        {/* Add Guard Modal */}
         <Modal
           visible={modalVisible}
-          animationType="slide"
+          animationType='slide'
           transparent={true}
           onRequestClose={() => setModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>
-                  {editMode ? "Edit Guard" : "Add New Guard"}
-                </Text>
-                <Pressable onPress={() => setModalVisible(false)}>
-                  <Ionicons name="close" size={24} color="#94A3B8" />
-                </Pressable>
-              </View>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={styles.keyboardView}
+            >
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.modalContent}>
+                  {/* Header */}
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Add New Guard</Text>
+                    <Pressable onPress={() => setModalVisible(false)}>
+                      <Ionicons name='close' size={24} color='#94A3B8' />
+                    </Pressable>
+                  </View>
 
-              <ScrollView
-                style={styles.formScroll}
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Full Name *</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter guard name"
-                    placeholderTextColor="#64748B"
-                    value={formData.name}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, name: text })
-                    }
-                  />
+                  {/* Scrollable Form */}
+                  <ScrollView
+                    style={styles.formScroll}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps='handled'
+                  >
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Full Name *</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder='Enter guard name'
+                        placeholderTextColor='#64748B'
+                        value={formData.name}
+                        onChangeText={(text) =>
+                          setFormData({ ...formData, name: text })
+                        }
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Email *</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder='guard@example.com'
+                        placeholderTextColor='#64748B'
+                        value={formData.email}
+                        onChangeText={(text) =>
+                          setFormData({ ...formData, email: text })
+                        }
+                        keyboardType='email-address'
+                        autoCapitalize='none'
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Employee ID *</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder='Enter unique employee ID'
+                        placeholderTextColor='#64748B'
+                        value={formData.employeeId}
+                        onChangeText={(text) =>
+                          setFormData({ ...formData, employeeId: text })
+                        }
+                        autoCapitalize='characters'
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Password *</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder='Enter password'
+                        placeholderTextColor='#64748B'
+                        value={formData.password}
+                        onChangeText={(text) =>
+                          setFormData({ ...formData, password: text })
+                        }
+                        secureTextEntry
+                      />
+                    </View>
+                  </ScrollView>
+
+                  {/* Buttons */}
+                  <View style={styles.modalActions}>
+                    <Pressable
+                      style={styles.cancelButton}
+                      onPress={() => setModalVisible(false)}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.submitButton}
+                      onPress={handleAddGuard}
+                    >
+                      <Text style={styles.submitButtonText}>Add Guard</Text>
+                    </Pressable>
+                  </View>
                 </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Email Address *</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="guard@example.com"
-                    placeholderTextColor="#64748B"
-                    value={formData.email}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, email: text })
-                    }
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Phone Number</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter phone number"
-                    placeholderTextColor="#64748B"
-                    value={formData.phone}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, phone: text })
-                    }
-                    keyboardType="phone-pad"
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>
-                    Password {editMode ? "(Leave blank to keep current)" : "*"}
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder={
-                      editMode ? "Enter new password" : "Enter password"
-                    }
-                    placeholderTextColor="#64748B"
-                    value={formData.password}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, password: text })
-                    }
-                    secureTextEntry
-                  />
-                </View>
-              </ScrollView>
-
-              <View style={styles.modalActions}>
-                <Pressable
-                  style={styles.cancelButton}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </Pressable>
-                <Pressable style={styles.submitButton} onPress={handleSubmit}>
-                  <Text style={styles.submitButtonText}>
-                    {editMode ? "Update" : "Add Guard"}
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
+              </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
           </View>
         </Modal>
       </View>
@@ -457,25 +357,14 @@ export default function ManageGuardsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#0A0E1A",
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: "#0A0E1A",
-  },
+  safeArea: { flex: 1, backgroundColor: "#0A0E1A" },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#0A0E1A",
   },
-  loadingText: {
-    color: "#94A3B8",
-    marginTop: 12,
-    fontSize: 15,
-  },
+  loadingText: { color: "#94A3B8", marginTop: 12, fontSize: 15 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -485,8 +374,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E293B",
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    elevation: 4,
   },
+  keyboardView: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+
   backButton: {
     width: 40,
     height: 40,
@@ -495,20 +388,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  headerTextContainer: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  headerTitle: {
-    color: "#F1F5F9",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  headerSubtitle: {
-    color: "#64748B",
-    fontSize: 13,
-    marginTop: 2,
-  },
+  headerTextContainer: { flex: 1, marginLeft: 12 },
+  headerTitle: { color: "#F1F5F9", fontSize: 22, fontWeight: "800" },
+  headerSubtitle: { color: "#64748B", fontSize: 13, marginTop: 2 },
   addButton: {
     width: 44,
     height: 44,
@@ -516,110 +398,31 @@ const styles = StyleSheet.create({
     backgroundColor: "#3B82F6",
     justifyContent: "center",
     alignItems: "center",
-    elevation: 4,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-  },
+  scrollView: { flex: 1 },
+  scrollContent: { padding: 20 },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 80,
   },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-    opacity: 0.5,
-  },
+  emptyIcon: { fontSize: 64, marginBottom: 16, opacity: 0.5 },
   emptyTitle: {
     color: "#94A3B8",
     fontSize: 20,
     fontWeight: "700",
     marginBottom: 8,
   },
-  emptyText: {
-    color: "#64748B",
-    fontSize: 14,
-    textAlign: "center",
-  },
+  emptyText: { color: "#64748B", fontSize: 14, textAlign: "center" },
   guardCard: {
     backgroundColor: "#1E293B",
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
   },
-  guardHeader: {
-    marginBottom: 12,
-  },
-  guardInfo: {
-    flex: 1,
-  },
-  guardNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  guardName: {
-    color: "#F1F5F9",
-    fontSize: 18,
-    fontWeight: "700",
-    flex: 1,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  guardDetail: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-  },
-  guardDetailText: {
-    color: "#94A3B8",
-    fontSize: 14,
-  },
-  guardActions: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 4,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
-  },
-  actionButtonText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  deleteButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: "rgba(239,68,68,0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  guardName: { color: "#F1F5F9", fontSize: 18, fontWeight: "700" },
+  guardEmail: { color: "#94A3B8", fontSize: 14, marginTop: 4 },
+  guardPhone: { color: "#64748B", fontSize: 13, marginTop: 2 },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.7)",
@@ -642,18 +445,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#334155",
   },
-  modalTitle: {
-    color: "#F1F5F9",
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  formScroll: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
+  modalTitle: { color: "#F1F5F9", fontSize: 22, fontWeight: "700" },
+  formScroll: { paddingHorizontal: 20, paddingTop: 20 },
+  inputGroup: { marginBottom: 20 },
   inputLabel: {
     color: "#94A3B8",
     fontSize: 14,
@@ -683,11 +477,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#334155",
     alignItems: "center",
   },
-  cancelButtonText: {
-    color: "#94A3B8",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  cancelButtonText: { color: "#94A3B8", fontSize: 16, fontWeight: "700" },
   submitButton: {
     flex: 1,
     paddingVertical: 14,
@@ -695,9 +485,5 @@ const styles = StyleSheet.create({
     backgroundColor: "#3B82F6",
     alignItems: "center",
   },
-  submitButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  submitButtonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
 });

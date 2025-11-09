@@ -6,52 +6,38 @@ import {
   StyleSheet,
   Pressable,
   Alert,
-  SafeAreaView,
-  ActivityIndicator,
   ScrollView,
   RefreshControl,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
+  ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ManageAdminScreen({ navigation }) {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [selectedAdmin, setSelectedAdmin] = useState(null);
-  const [currentUserId, setCurrentUserId] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    phone: "",
+    employeeId: "",
     password: "",
   });
 
   useEffect(() => {
-    fetchCurrentUser();
     fetchAdmins();
   }, []);
 
-  const fetchCurrentUser = async () => {
-    try {
-      const token = await AsyncStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/admin/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (data.success) {
-        setCurrentUserId(data.data._id);
-      }
-    } catch (error) {
-      console.error("❌ Fetch Current User Error:", error);
-    }
-  };
-
+  // ✅ Fetch all admins
   const fetchAdmins = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
@@ -61,9 +47,7 @@ export default function ManageAdminScreen({ navigation }) {
       }
 
       const response = await fetch(`${API_BASE_URL}/api/admin/admins`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await response.json();
@@ -87,73 +71,96 @@ export default function ManageAdminScreen({ navigation }) {
   };
 
   const openAddModal = () => {
-    setEditMode(false);
-    setSelectedAdmin(null);
-    setFormData({ name: "", email: "", phone: "", password: "" });
+    setFormData({ name: "", email: "", employeeId: "", password: "" });
     setModalVisible(true);
   };
 
-  const openEditModal = (admin) => {
-    setEditMode(true);
-    setSelectedAdmin(admin);
-    setFormData({
-      name: admin.name,
-      email: admin.email,
-      phone: admin.phone || "",
-      password: "",
-    });
-    setModalVisible(true);
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.name || !formData.email) {
-      Alert.alert("Validation Error", "Name and email are required");
-      return;
-    }
-
-    if (!editMode && !formData.password) {
-      Alert.alert("Validation Error", "Password is required for new admins");
+  // ✅ Register Admin API call
+  const handleAddAdmin = async () => {
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.employeeId ||
+      !formData.password
+    ) {
+      Alert.alert("Validation Error", "All fields are required.");
       return;
     }
 
     try {
       const token = await AsyncStorage.getItem("token");
-      const url = editMode
-        ? `${API_BASE_URL}/api/admin/admins/${selectedAdmin._id}`
-        : `${API_BASE_URL}/api/admin/admins`;
-
-      const response = await fetch(url, {
-        method: editMode ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-      if (response.ok && data.success) {
+      if (!token) {
         Alert.alert(
-          "Success",
-          editMode ? "Admin updated successfully" : "Admin added successfully"
+          "Authorization Error",
+          "Token missing. Please log in again."
         );
-        setModalVisible(false);
-        fetchAdmins();
-      } else {
-        Alert.alert("Error", data.message || "Operation failed");
+        return;
       }
+
+      const payload = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        employeeId: formData.employeeId.trim(),
+        password: formData.password,
+        role: "admin",
+      };
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/admin/registeremployee`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const text = await response.text();
+      console.log("🔍 Register Admin Response:", text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        Alert.alert("Server Error", "Invalid response from backend.");
+        return;
+      }
+
+      if (!response.ok || !data.success) {
+        switch (data.message) {
+          case "Authorization token missing":
+            Alert.alert("Error", "Token missing. Please log in again.");
+            break;
+          case "Invalid or expired token":
+            Alert.alert("Session Expired", "Please log in again.");
+            break;
+          case "Access denied. Admin only.":
+            Alert.alert("Access Denied", "Only admins can add new admins.");
+            break;
+          case "User with this email or employee ID already exists":
+            Alert.alert(
+              "Duplicate",
+              "Admin with this email or ID already exists."
+            );
+            break;
+          default:
+            Alert.alert("Error", data.message || "Something went wrong.");
+        }
+        return;
+      }
+
+      Alert.alert("Success", "Admin registered successfully!");
+      setModalVisible(false);
+      fetchAdmins();
     } catch (error) {
-      console.error("❌ Submit Error:", error);
+      console.error("❌ Add Admin Error:", error);
       Alert.alert("Network Error", "Unable to connect to the server.");
     }
   };
 
   const handleDelete = (admin) => {
-    if (admin._id === currentUserId) {
-      Alert.alert("Error", "You cannot delete your own account");
-      return;
-    }
-
     Alert.alert(
       "Delete Admin",
       `Are you sure you want to remove ${admin.name}?`,
@@ -169,9 +176,7 @@ export default function ManageAdminScreen({ navigation }) {
                 `${API_BASE_URL}/api/admin/admins/${admin._id}`,
                 {
                   method: "DELETE",
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
+                  headers: { Authorization: `Bearer ${token}` },
                 }
               );
 
@@ -192,44 +197,10 @@ export default function ManageAdminScreen({ navigation }) {
     );
   };
 
-  const toggleAdminStatus = async (admin) => {
-    if (admin._id === currentUserId) {
-      Alert.alert("Error", "You cannot deactivate your own account");
-      return;
-    }
-
-    try {
-      const token = await AsyncStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/api/admin/admins/${admin._id}/toggle-status`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-      if (response.ok && data.success) {
-        Alert.alert(
-          "Success",
-          `Admin ${data.data.isActive ? "activated" : "deactivated"}`
-        );
-        fetchAdmins();
-      } else {
-        Alert.alert("Error", data.message || "Failed to update status");
-      }
-    } catch (error) {
-      console.error("❌ Toggle Status Error:", error);
-      Alert.alert("Network Error", "Unable to connect to the server.");
-    }
-  };
-
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size='large' color='#3B82F6' />
+        <ActivityIndicator size='large' color='#8B5CF6' />
         <Text style={styles.loadingText}>Loading admins...</Text>
       </View>
     );
@@ -257,18 +228,12 @@ export default function ManageAdminScreen({ navigation }) {
           </Pressable>
         </View>
 
-        {/* Admins List */}
+        {/* Admin List */}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor='#3B82F6'
-              colors={["#3B82F6"]}
-            />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
           {admins.length === 0 ? (
@@ -280,245 +245,123 @@ export default function ManageAdminScreen({ navigation }) {
               </Text>
             </View>
           ) : (
-            admins.map((admin, index) => {
-              const isCurrentUser = admin._id === currentUserId;
-              return (
-                <View key={admin._id || index} style={styles.adminCard}>
-                  <View style={styles.adminHeader}>
-                    <View style={styles.adminInfo}>
-                      <View style={styles.adminNameRow}>
-                        <Text style={styles.adminName}>{admin.name}</Text>
-                        {isCurrentUser && (
-                          <View style={styles.youBadge}>
-                            <Text style={styles.youText}>You</Text>
-                          </View>
-                        )}
-                        <View
-                          style={[
-                            styles.statusBadge,
-                            {
-                              backgroundColor: admin.isActive
-                                ? "rgba(34,197,94,0.15)"
-                                : "rgba(239,68,68,0.15)",
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.statusText,
-                              { color: admin.isActive ? "#22C55E" : "#EF4444" },
-                            ]}
-                          >
-                            {admin.isActive ? "Active" : "Inactive"}
-                          </Text>
-                        </View>
-                      </View>
-                      <View style={styles.adminDetail}>
-                        <Ionicons
-                          name='mail-outline'
-                          size={14}
-                          color='#64748B'
-                        />
-                        <Text style={styles.adminDetailText}>
-                          {admin.email}
-                        </Text>
-                      </View>
-                      {admin.phone && (
-                        <View style={styles.adminDetail}>
-                          <Ionicons
-                            name='call-outline'
-                            size={14}
-                            color='#64748B'
-                          />
-                          <Text style={styles.adminDetailText}>
-                            {admin.phone}
-                          </Text>
-                        </View>
-                      )}
-                      <View style={styles.adminDetail}>
-                        <Ionicons
-                          name='shield-checkmark-outline'
-                          size={14}
-                          color='#8B5CF6'
-                        />
-                        <Text
-                          style={[styles.adminDetailText, { color: "#8B5CF6" }]}
-                        >
-                          Administrator
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  <View style={styles.adminActions}>
-                    <Pressable
-                      style={[
-                        styles.actionButton,
-                        {
-                          backgroundColor: admin.isActive
-                            ? "rgba(239,68,68,0.1)"
-                            : "rgba(34,197,94,0.1)",
-                          opacity: isCurrentUser ? 0.5 : 1,
-                        },
-                      ]}
-                      onPress={() => toggleAdminStatus(admin)}
-                      disabled={isCurrentUser}
-                    >
-                      <Ionicons
-                        name={admin.isActive ? "pause" : "play"}
-                        size={16}
-                        color={admin.isActive ? "#EF4444" : "#22C55E"}
-                      />
-                      <Text
-                        style={[
-                          styles.actionButtonText,
-                          { color: admin.isActive ? "#EF4444" : "#22C55E" },
-                        ]}
-                      >
-                        {admin.isActive ? "Deactivate" : "Activate"}
-                      </Text>
-                    </Pressable>
-
-                    <Pressable
-                      style={[
-                        styles.actionButton,
-                        { backgroundColor: "rgba(59,130,246,0.1)" },
-                      ]}
-                      onPress={() => openEditModal(admin)}
-                    >
-                      <Ionicons name='pencil' size={16} color='#3B82F6' />
-                      <Text
-                        style={[styles.actionButtonText, { color: "#3B82F6" }]}
-                      >
-                        Edit
-                      </Text>
-                    </Pressable>
-
-                    <Pressable
-                      style={[
-                        styles.deleteButton,
-                        { opacity: isCurrentUser ? 0.5 : 1 },
-                      ]}
-                      onPress={() => handleDelete(admin)}
-                      disabled={isCurrentUser}
-                    >
-                      <Ionicons
-                        name='trash-outline'
-                        size={18}
-                        color='#EF4444'
-                      />
-                    </Pressable>
-                  </View>
+            admins.map((admin, index) => (
+              <View key={admin._id || index} style={styles.adminCard}>
+                <View style={styles.adminInfo}>
+                  <Text style={styles.adminName}>{admin.name}</Text>
+                  <Text style={styles.adminDetail}>{admin.email}</Text>
+                  <Text style={[styles.adminDetail, { color: "#8B5CF6" }]}>
+                    Administrator
+                  </Text>
                 </View>
-              );
-            })
+                <Pressable
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(admin)}
+                >
+                  <Ionicons name='trash-outline' size={18} color='#EF4444' />
+                </Pressable>
+              </View>
+            ))
           )}
         </ScrollView>
 
-        {/* Add/Edit Modal */}
-        <Modal
-          visible={modalVisible}
-          animationType='slide'
-          transparent={true}
-          onRequestClose={() => setModalVisible(false)}
-        >
+        {/* Add Admin Modal */}
+        <Modal visible={modalVisible} animationType='slide' transparent>
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>
-                  {editMode ? "Edit Admin" : "Add New Admin"}
-                </Text>
-                <Pressable onPress={() => setModalVisible(false)}>
-                  <Ionicons name='close' size={24} color='#94A3B8' />
-                </Pressable>
-              </View>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={{ flex: 1, justifyContent: "flex-end" }}
+            >
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Add New Admin</Text>
+                    <Pressable onPress={() => setModalVisible(false)}>
+                      <Ionicons name='close' size={24} color='#94A3B8' />
+                    </Pressable>
+                  </View>
 
-              <ScrollView
-                style={styles.formScroll}
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Full Name *</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder='Enter admin name'
-                    placeholderTextColor='#64748B'
-                    value={formData.name}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, name: text })
-                    }
-                  />
+                  <ScrollView style={styles.formScroll}>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Full Name *</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder='Enter admin name'
+                        placeholderTextColor='#64748B'
+                        value={formData.name}
+                        onChangeText={(text) =>
+                          setFormData({ ...formData, name: text })
+                        }
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Email *</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder='admin@example.com'
+                        placeholderTextColor='#64748B'
+                        value={formData.email}
+                        onChangeText={(text) =>
+                          setFormData({ ...formData, email: text })
+                        }
+                        keyboardType='email-address'
+                        autoCapitalize='none'
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Employee ID *</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder='Enter unique employee ID'
+                        placeholderTextColor='#64748B'
+                        value={formData.employeeId}
+                        onChangeText={(text) =>
+                          setFormData({ ...formData, employeeId: text })
+                        }
+                        autoCapitalize='characters'
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Password *</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder='Enter password'
+                        placeholderTextColor='#64748B'
+                        value={formData.password}
+                        onChangeText={(text) =>
+                          setFormData({ ...formData, password: text })
+                        }
+                        secureTextEntry
+                      />
+                    </View>
+                  </ScrollView>
+
+                  <View style={styles.modalActions}>
+                    <Pressable
+                      style={styles.cancelButton}
+                      onPress={() => setModalVisible(false)}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.submitButton}
+                      onPress={handleAddAdmin}
+                    >
+                      <Text style={styles.submitButtonText}>Add Admin</Text>
+                    </Pressable>
+                  </View>
                 </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Email Address *</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder='admin@example.com'
-                    placeholderTextColor='#64748B'
-                    value={formData.email}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, email: text })
-                    }
-                    keyboardType='email-address'
-                    autoCapitalize='none'
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Phone Number</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder='Enter phone number'
-                    placeholderTextColor='#64748B'
-                    value={formData.phone}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, phone: text })
-                    }
-                    keyboardType='phone-pad'
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>
-                    Password {editMode ? "(Leave blank to keep current)" : "*"}
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder={
-                      editMode ? "Enter new password" : "Enter password"
-                    }
-                    placeholderTextColor='#64748B'
-                    value={formData.password}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, password: text })
-                    }
-                    secureTextEntry
-                  />
-                </View>
-              </ScrollView>
-
-              <View style={styles.modalActions}>
-                <Pressable
-                  style={styles.cancelButton}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </Pressable>
-                <Pressable style={styles.submitButton} onPress={handleSubmit}>
-                  <Text style={styles.submitButtonText}>
-                    {editMode ? "Update" : "Add Admin"}
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
+              </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
           </View>
         </Modal>
       </View>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -539,6 +382,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 15,
   },
+
+  // ----- HEADER -----
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -581,6 +426,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 4,
   },
+
+  // ----- SCROLL & EMPTY STATE -----
   scrollView: {
     flex: 1,
   },
@@ -608,6 +455,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
+
+  // ----- ADMIN CARD -----
   adminCard: {
     backgroundColor: "#1E293B",
     borderRadius: 16,
@@ -620,73 +469,23 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     borderLeftWidth: 4,
     borderLeftColor: "#8B5CF6",
-  },
-  adminHeader: {
-    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   adminInfo: {
     flex: 1,
-  },
-  adminNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-    flexWrap: "wrap",
-    gap: 8,
   },
   adminName: {
     color: "#F1F5F9",
     fontSize: 18,
     fontWeight: "700",
-  },
-  youBadge: {
-    backgroundColor: "rgba(139,92,246,0.2)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  youText: {
-    color: "#8B5CF6",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    marginBottom: 4,
   },
   adminDetail: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-  },
-  adminDetailText: {
     color: "#94A3B8",
     fontSize: 14,
-  },
-  adminActions: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 4,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
-  },
-  actionButtonText: {
-    fontSize: 13,
-    fontWeight: "600",
+    marginBottom: 2,
   },
   deleteButton: {
     width: 44,
@@ -696,6 +495,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
+  // ----- MODAL -----
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.7)",
@@ -746,6 +547,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#334155",
   },
+
+  // ----- BUTTONS -----
   modalActions: {
     flexDirection: "row",
     gap: 12,

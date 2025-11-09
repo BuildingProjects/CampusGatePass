@@ -44,7 +44,6 @@ export default function LoginScreen({ route, navigation }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // role: "student",
           role: role.toLowerCase(),
           email: email.trim(),
           password,
