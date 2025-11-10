@@ -392,6 +392,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 30,
+    paddingTop: 30,
     alignItems: "center",
   },
   heading: {
