@@ -7,6 +7,7 @@ export default function SplashScreen({ navigation }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
+    console.log(require("../assets/inout-intro.mp4"));
     // Fade in animation for logo/text
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -18,7 +19,7 @@ export default function SplashScreen({ navigation }) {
     // Navigate after video finishes (or fallback delay)
     const timer = setTimeout(() => {
       navigation.replace("RoleSelector"); // change if needed
-    }, 4000);
+    }, 50000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -43,13 +44,13 @@ export default function SplashScreen({ navigation }) {
 
       {/* Overlay content */}
       <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
-        <Image
+        {/* <Image
           source={require("../assets/inout-logo.png")}
           style={styles.logo}
           resizeMode='contain'
-        />
-        <Text style={styles.appName}>InOut</Text>
-        <Text style={styles.tagline}>Smart Entry. Simplified.</Text>
+        /> */}
+        {/* <Text style={styles.appName}>InOut</Text>
+        <Text style={styles.tagline}>Smart Entry. Simplified.</Text> */}
       </Animated.View>
     </View>
   );
