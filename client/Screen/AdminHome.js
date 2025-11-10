@@ -185,21 +185,6 @@ export default function AdminHome({ navigation }) {
                 </View>
               ))}
             </View>
-
-            <View style={styles.guardsStatus}>
-              <View style={styles.guardStatItem}>
-                <Ionicons name='shield-checkmark' size={20} color='#22C55E' />
-                <Text style={styles.guardStatText}>
-                  {stats.activeGuards} Active Guards
-                </Text>
-              </View>
-              <View style={styles.guardStatItem}>
-                <Ionicons name='people-outline' size={20} color='#94A3B8' />
-                <Text style={styles.guardStatText}>
-                  {stats.totalGuards} Total Guards
-                </Text>
-              </View>
-            </View>
           </View>
 
           {/* Quick Actions */}
@@ -418,7 +403,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E293B",
     borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 25,
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
