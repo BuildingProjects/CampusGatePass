@@ -25,44 +25,36 @@ export default function SignupScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
-    if (!name || !email || !password || !repassword) {
-      alert("Please fill all fields!");
-      return;
-    }
-    if (password !== repassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-
-    setLoading(true);
+    console.log("➡️ Sending signup request...");
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 7000); // ⏰ 7s timeout
+
       const response = await fetch(`${API_BASE_URL}/api/auth/registerStudent`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-        }),
+        body: JSON.stringify({ name, email, password }),
+        signal: controller.signal,
       });
 
-      const data = await response.json();
+      clearTimeout(timeout);
+      console.log("✅ Got response status:", response.status);
 
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to register");
-      }
+      const text = await response.text();
+      console.log("🧾 Raw response text:", text);
+
+      const data = JSON.parse(text);
+      console.log("✅ Parsed JSON:", data);
+
+      if (!response.ok) throw new Error(data.message || "Failed to register");
 
       alert(data.message || "Registration successful!");
-
-      // redirect to login after success
       navigation.navigate("LoginScreen", { role });
     } catch (err) {
-      console.error("Signup Error:", err);
-      alert(err.message || "Network error");
-    } finally {
-      setLoading(false);
+      console.error("❌ Signup Error:", err);
+      alert(err.name === "AbortError" ? "Request timed out" : err.message);
     }
   };
 

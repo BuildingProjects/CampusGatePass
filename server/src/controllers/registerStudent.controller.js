@@ -4,6 +4,8 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 
 exports.registerStudent = async (req, res) => {
+  console.log("🟢 Incoming registerStudent", req.body);
+
   try {
     const { name, email, password } = req.body;
 
@@ -41,13 +43,10 @@ exports.registerStudent = async (req, res) => {
       isVerified: false,
     });
 
-    
-
     return res.status(201).json({
       success: true,
-      message: "Account created. Please log in."
+      message: "Account created. Please log in.",
     });
-
   } catch (err) {
     console.error("Register Error:", err);
 
