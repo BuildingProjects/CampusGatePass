@@ -12,6 +12,7 @@ import {
   Alert,
   Keyboard,
   Platform,
+  Pressable,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
@@ -131,25 +132,36 @@ export default function ViewLogsScreen({ navigation }) {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.headerRow}>
+        {/* <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={26} color="#F1F5F9" />
           </TouchableOpacity>
           <Text style={styles.title}>All Logs</Text>
-          <View style={{ width: 26 }} /> {/* symmetry */}
+          <View style={{ width: 26 }} />
+        </View>  */}
+        <View style={styles.header}>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name='arrow-back' size={24} color='#F1F5F9' />
+          </Pressable>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.title}>All Logs</Text>
+          </View>
         </View>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={20} color="#94A3B8" />
+          <Ionicons name='search-outline' size={20} color='#94A3B8' />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by Roll Number..."
-            placeholderTextColor="#94A3B8"
+            placeholder='Search by Roll Number...'
+            placeholderTextColor='#94A3B8'
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
-            returnKeyType="search"
+            returnKeyType='search'
           />
           {searchQuery !== "" && (
             <TouchableOpacity
@@ -158,7 +170,7 @@ export default function ViewLogsScreen({ navigation }) {
                 fetchAllLogs();
               }}
             >
-              <Ionicons name="close-circle" size={20} color="#64748B" />
+              <Ionicons name='close-circle' size={20} color='#64748B' />
             </TouchableOpacity>
           )}
         </View>
@@ -166,12 +178,12 @@ export default function ViewLogsScreen({ navigation }) {
         {/* Logs List */}
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color="#3B82F6" />
+            <ActivityIndicator size='large' color='#3B82F6' />
             <Text style={styles.loadingText}>Fetching logs...</Text>
           </View>
         ) : logs.length === 0 ? (
           <View style={styles.center}>
-            <Ionicons name="document-text-outline" size={48} color="#475569" />
+            <Ionicons name='document-text-outline' size={48} color='#475569' />
             <Text style={styles.noLogsText}>No logs found</Text>
           </View>
         ) : (
@@ -194,8 +206,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    // paddingHorizontal: 20,
+    // paddingTop: 20,
+    backgroundColor: "#0A0E1A",
   },
   headerRow: {
     flexDirection: "row",
@@ -218,6 +231,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginBottom: 20,
+    marginHorizontal: 20,
+    marginTop: 5,
   },
   searchInput: {
     flex: 1,
@@ -244,6 +259,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingBottom: 40,
+    marginHorizontal: 20,
   },
   logCard: {
     backgroundColor: "#1E293B",
@@ -287,5 +303,48 @@ const styles = StyleSheet.create({
   exit: {
     backgroundColor: "rgba(239,68,68,0.15)",
     color: "#EF4444",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#1E293B",
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
+    marginBottom: 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#0F172A",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  headerTitle: {
+    color: "#F1F5F9",
+    fontSize: 22,
+    fontWeight: "800",
+  },
+  headerSubtitle: {
+    color: "#64748B",
+    fontSize: 13,
+    marginTop: 2,
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#8B5CF6",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 4,
   },
 });

@@ -246,6 +246,7 @@ export default function ManageAdminScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
+        
         {/* Header */}
         <View style={styles.header}>
           <Pressable
@@ -291,12 +292,12 @@ export default function ManageAdminScreen({ navigation }) {
                     Administrator
                   </Text>
                 </View>
-                <Pressable
+                {/* <Pressable
                   style={styles.deleteButton}
                   onPress={() => handleDelete(admin)}
                 >
                   <Ionicons name='trash-outline' size={18} color='#EF4444' />
-                </Pressable>
+                </Pressable> */}
               </View>
             ))
           )}
