@@ -12,6 +12,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
+  ActionSheetIOS,
+  KeyboardAvoidingView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -20,8 +25,9 @@ import {
   CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_UPLOAD_PRESET,
 } from "@env";
-import { ActionSheetIOS, Platform } from "react-native";
 import { CommonActions } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ProfileCompletionScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -31,11 +37,11 @@ export default function ProfileCompletionScreen({ navigation }) {
   const [photoUri, setPhotoUri] = useState(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [focusedInput, setFocusedInput] = useState(null);
 
   const pickImage = async () => {
     console.log("Image Picking...");
     try {
-      // ✅ iOS Style Picker
       if (Platform.OS === "ios") {
         ActionSheetIOS.showActionSheetWithOptions(
           {
@@ -44,7 +50,6 @@ export default function ProfileCompletionScreen({ navigation }) {
           },
           async (buttonIndex) => {
             if (buttonIndex === 1) {
-              // 📷 Camera
               const { status } =
                 await ImagePicker.requestCameraPermissionsAsync();
               if (status !== "granted") {
@@ -61,7 +66,6 @@ export default function ProfileCompletionScreen({ navigation }) {
                 setPhotoUri(result.assets[0].uri);
               }
             } else if (buttonIndex === 2) {
-              // 🖼️ Gallery
               const { status } =
                 await ImagePicker.requestMediaLibraryPermissionsAsync();
               if (status !== "granted") {
@@ -76,13 +80,11 @@ export default function ProfileCompletionScreen({ navigation }) {
               });
               if (!result.canceled) {
                 setPhotoUri(result.assets[0].uri);
-                console.log(result.assets[0].uri);
               }
             }
           }
         );
       } else {
-        // ✅ Android: Show options
         Alert.alert(
           "Upload Photo",
           "Choose an option",
@@ -130,14 +132,10 @@ export default function ProfileCompletionScreen({ navigation }) {
                 });
                 if (!result.canceled) {
                   setPhotoUri(result.assets[0].uri);
-                  console.log(result.assets[0].uri);
                 }
               },
             },
-            {
-              text: "Cancel",
-              style: "cancel",
-            },
+            { text: "Cancel", style: "cancel" },
           ],
           { cancelable: true }
         );
@@ -148,7 +146,6 @@ export default function ProfileCompletionScreen({ navigation }) {
     }
   };
 
-  // ☁️ Upload to ImageKit
   const uploadToCloudinary = async (uri) => {
     try {
       setUploading(true);
@@ -199,11 +196,9 @@ export default function ProfileCompletionScreen({ navigation }) {
         return;
       }
 
-      // Upload image first
       const uploadedUrl = await uploadToCloudinary(photoUri);
       if (!uploadedUrl) return;
 
-      // Send to backend
       const response = await fetch(
         `${API_BASE_URL}/api/student/completeprofile`,
         {
@@ -231,7 +226,7 @@ export default function ProfileCompletionScreen({ navigation }) {
         return;
       }
 
-      Alert.alert("Success", "Profile completed successfully!");
+      Alert.alert("Success! 🎉", "Profile completed successfully!");
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -247,129 +242,399 @@ export default function ProfileCompletionScreen({ navigation }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Complete Your Profile</Text>
-
-      <TouchableOpacity style={styles.imageContainer} onPress={pickImage}>
-        {photoUri ? (
-          <Image source={{ uri: photoUri }} style={styles.profileImage} />
-        ) : (
-          <View style={styles.imagePlaceholder}>
-            <Text style={styles.placeholderText}>Tap to upload photo</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-
-      {uploading && (
-        <Text style={{ color: "#94A3B8", marginBottom: 15 }}>
-          Uploading photo...
-        </Text>
-      )}
-
-      <TextInput
-        style={styles.input}
-        placeholder='Full Name'
-        placeholderTextColor='#94A3B8'
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder='Roll Number'
-        placeholderTextColor='#94A3B8'
-        value={rollNumber}
-        onChangeText={setRollNumber}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder='Department'
-        placeholderTextColor='#94A3B8'
-        value={department}
-        onChangeText={setDepartment}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder='Batch'
-        placeholderTextColor='#94A3B8'
-        keyboardType='numeric'
-        value={batch}
-        onChangeText={setBatch}
-      />
-
-      <Pressable
-        style={[styles.submitBtn, (loading || uploading) && { opacity: 0.6 }]}
-        onPress={handleSubmit}
-        disabled={loading || uploading}
+    <LinearGradient colors={["#0A0E1A", "#1E293B"]} style={styles.gradient}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        {loading ? (
-          <ActivityIndicator size='small' color='#fff' />
-        ) : (
-          <Text style={styles.btnText}>Save Profile</Text>
-        )}
-      </Pressable>
-    </ScrollView>
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps='handled'
+          >
+            <View style={styles.container}>
+              {/* Header */}
+              <View style={styles.header}>
+                <View style={styles.iconCircle}>
+                  <Ionicons name='person-outline' size={40} color='#3B82F6' />
+                </View>
+                <Text style={styles.heading}>Complete Your Profile</Text>
+                <Text style={styles.subheading}>
+                  Just a few more details to get started
+                </Text>
+              </View>
+
+              {/* Profile Photo Upload */}
+              <View style={styles.photoSection}>
+                <Text style={styles.sectionLabel}>Profile Photo</Text>
+                <TouchableOpacity
+                  style={styles.imageContainer}
+                  onPress={pickImage}
+                  disabled={uploading}
+                >
+                  {photoUri ? (
+                    <View style={styles.imageWrapper}>
+                      <Image
+                        source={{ uri: photoUri }}
+                        style={styles.profileImage}
+                      />
+                      <View style={styles.editBadge}>
+                        <Ionicons name='camera' size={16} color='#FFF' />
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.imagePlaceholder}>
+                      <Ionicons
+                        name='camera-outline'
+                        size={32}
+                        color='#64748B'
+                      />
+                      <Text style={styles.placeholderText}>Add Photo</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
+                {uploading && (
+                  <View style={styles.uploadingContainer}>
+                    <ActivityIndicator size='small' color='#3B82F6' />
+                    <Text style={styles.uploadingText}>Uploading photo...</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Form Fields */}
+              <View style={styles.form}>
+                {/* Name Input */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Full Name</Text>
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      focusedInput === "name" && styles.inputFocused,
+                    ]}
+                  >
+                    <Ionicons
+                      name='person-outline'
+                      size={20}
+                      color={focusedInput === "name" ? "#3B82F6" : "#64748B"}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder='Enter your full name'
+                      placeholderTextColor='#64748B'
+                      value={name}
+                      onChangeText={setName}
+                      onFocus={() => setFocusedInput("name")}
+                      onBlur={() => setFocusedInput(null)}
+                      returnKeyType='next'
+                    />
+                  </View>
+                </View>
+
+                {/* Roll Number Input */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Roll Number</Text>
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      focusedInput === "roll" && styles.inputFocused,
+                    ]}
+                  >
+                    <Ionicons
+                      name='card-outline'
+                      size={20}
+                      color={focusedInput === "roll" ? "#3B82F6" : "#64748B"}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder='Enter your roll number'
+                      placeholderTextColor='#64748B'
+                      value={rollNumber}
+                      onChangeText={setRollNumber}
+                      onFocus={() => setFocusedInput("roll")}
+                      onBlur={() => setFocusedInput(null)}
+                      returnKeyType='next'
+                    />
+                  </View>
+                </View>
+
+                {/* Department Input */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Department</Text>
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      focusedInput === "department" && styles.inputFocused,
+                    ]}
+                  >
+                    <Ionicons
+                      name='school-outline'
+                      size={20}
+                      color={
+                        focusedInput === "department" ? "#3B82F6" : "#64748B"
+                      }
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder='e.g., Computer Science'
+                      placeholderTextColor='#64748B'
+                      value={department}
+                      onChangeText={setDepartment}
+                      onFocus={() => setFocusedInput("department")}
+                      onBlur={() => setFocusedInput(null)}
+                      returnKeyType='next'
+                    />
+                  </View>
+                </View>
+
+                {/* Batch Input */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Batch Year</Text>
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      focusedInput === "batch" && styles.inputFocused,
+                    ]}
+                  >
+                    <Ionicons
+                      name='calendar-outline'
+                      size={20}
+                      color={focusedInput === "batch" ? "#3B82F6" : "#64748B"}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder='e.g., 2024'
+                      placeholderTextColor='#64748B'
+                      keyboardType='numeric'
+                      value={batch}
+                      onChangeText={setBatch}
+                      onFocus={() => setFocusedInput("batch")}
+                      onBlur={() => setFocusedInput(null)}
+                      returnKeyType='done'
+                    />
+                  </View>
+                </View>
+              </View>
+
+              {/* Submit Button */}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.submitButton,
+                  { opacity: loading || uploading || pressed ? 0.8 : 1 },
+                ]}
+                onPress={handleSubmit}
+                disabled={loading || uploading}
+              >
+                <LinearGradient
+                  colors={["#22C55E", "#16A34A"]}
+                  style={styles.submitGradient}
+                >
+                  {loading ? (
+                    <ActivityIndicator size='small' color='#FFF' />
+                  ) : (
+                    <>
+                      <Text style={styles.submitButtonText}>
+                        Complete Profile
+                      </Text>
+                      <Ionicons
+                        name='checkmark-circle'
+                        size={20}
+                        color='#FFF'
+                      />
+                    </>
+                  )}
+                </LinearGradient>
+              </Pressable>
+
+              {/* Footer */}
+              <View style={styles.footer}>
+                <View style={styles.infoBadge}>
+                  <Ionicons
+                    name='information-circle'
+                    size={16}
+                    color='#64748B'
+                  />
+                  <Text style={styles.infoText}>
+                    All information can be updated later
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
-// ---------- STYLES ----------
 const styles = StyleSheet.create({
-  container: {
+  gradient: {
+    flex: 1,
+  },
+  scrollContainer: {
     flexGrow: 1,
-    backgroundColor: "#0F172A",
-    alignItems: "center",
     paddingVertical: 40,
+  },
+  container: {
     paddingHorizontal: 24,
+    marginTop: 30,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(59,130,246,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+    elevation: 8,
   },
   heading: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 30,
+    color: "#F1F5F9",
+    fontSize: 28,
+    fontWeight: "800",
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  subheading: {
+    color: "#94A3B8",
+    fontSize: 15,
+    textAlign: "center",
+  },
+  photoSection: {
+    alignItems: "center",
+  },
+  sectionLabel: {
+    color: "#94A3B8",
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 12,
   },
   imageContainer: {
-    marginBottom: 25,
+    marginBottom: 12,
+  },
+  imageWrapper: {
+    position: "relative",
   },
   profileImage: {
     width: 120,
     height: 120,
     borderRadius: 60,
+    borderWidth: 4,
+    borderColor: "#3B82F6",
+  },
+  editBadge: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#3B82F6",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 3,
-    borderColor: "#2563EB",
+    borderColor: "#1E293B",
   },
   imagePlaceholder: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    borderWidth: 2,
+    borderWidth: 3,
+    borderStyle: "dashed",
     borderColor: "#475569",
+    backgroundColor: "#1E293B",
     alignItems: "center",
     justifyContent: "center",
   },
   placeholderText: {
+    color: "#64748B",
+    fontSize: 13,
+    marginTop: 6,
+    fontWeight: "600",
+  },
+  uploadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  uploadingText: {
     color: "#94A3B8",
-    fontSize: 12,
+    fontSize: 14,
+  },
+  form: {
+    marginBottom: 24,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    color: "#94A3B8",
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1E293B",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  inputFocused: {
+    borderColor: "#3B82F6",
+    backgroundColor: "#0F172A",
   },
   input: {
-    width: "100%",
-    backgroundColor: "#1E293B",
-    color: "#fff",
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 10,
-    marginBottom: 15,
-    fontSize: 15,
-  },
-  submitBtn: {
-    backgroundColor: "#10B981",
-    width: "100%",
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  btnText: {
-    color: "#fff",
+    flex: 1,
+    color: "#F1F5F9",
     fontSize: 16,
+    paddingVertical: 12,
+    marginLeft: 12,
+  },
+  submitButton: {
+    borderRadius: 14,
+    overflow: "hidden",
+    elevation: 6,
+    marginBottom: 24,
+  },
+  submitGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    gap: 8,
+  },
+  submitButtonText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  footer: {
+    alignItems: "center",
+  },
+  infoBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(100,116,139,0.1)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  infoText: {
+    color: "#64748B",
+    fontSize: 12,
     fontWeight: "600",
   },
 });
