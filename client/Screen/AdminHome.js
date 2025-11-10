@@ -29,7 +29,7 @@ export default function AdminHome({ navigation }) {
   });
 
   useEffect(() => {
-    fetchAdminProfile();
+    // fetchAdminProfile();
     fetchStats();
   }, []);
 
@@ -80,6 +80,7 @@ export default function AdminHome({ navigation }) {
       });
 
       const data = await res.json();
+      setLoading(false);
 
       if (!res.ok) {
         // Network-level errors (like 401, 403, 500)
@@ -116,6 +117,7 @@ export default function AdminHome({ navigation }) {
           default:
             Alert.alert("Error", data.message || "Unknown error occurred");
         }
+
         return;
       }
 
@@ -159,7 +161,7 @@ export default function AdminHome({ navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size='large' color='#3B82F6' />
+        <ActivityIndicator size="large" color="#3B82F6" />
         <Text style={styles.loadingText}>Loading admin dashboard...</Text>
       </View>
     );
@@ -170,8 +172,8 @@ export default function AdminHome({ navigation }) {
       {/* Transparent status bar to merge header cleanly */}
       <StatusBar
         translucent
-        backgroundColor='#1E293B'
-        barStyle='light-content'
+        backgroundColor="#1E293B"
+        barStyle="light-content"
       />
 
       <SafeAreaView style={styles.safeArea}>
@@ -182,7 +184,7 @@ export default function AdminHome({ navigation }) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor='#3B82F6'
+              tintColor="#3B82F6"
               colors={["#3B82F6"]}
             />
           }
@@ -201,9 +203,9 @@ export default function AdminHome({ navigation }) {
                 onPress={() => Alert.alert("Profile", "Coming soon!")}
               >
                 <Ionicons
-                  name='person-circle-outline'
+                  name="person-circle-outline"
                   size={48}
-                  color='#3B82F6'
+                  color="#3B82F6"
                 />
               </Pressable>
             </View>
@@ -290,14 +292,14 @@ export default function AdminHome({ navigation }) {
                     {item.description}
                   </Text>
                 </View>
-                <Ionicons name='chevron-forward' size={20} color='#64748B' />
+                <Ionicons name="chevron-forward" size={20} color="#64748B" />
               </Pressable>
             ))}
           </View>
 
           {/* Logout */}
           <Pressable style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name='log-out-outline' size={20} color='#EF4444' />
+            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
             <Text style={styles.logoutText}>Sign Out</Text>
           </Pressable>
 

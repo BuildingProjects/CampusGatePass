@@ -28,44 +28,83 @@ export default function GuardScannerScreen({ log, setLog }) {
 
   const handleBarCodeScanned = ({ data }) => {
     console.log("📦 Raw QR Data:", data);
-    setRawData(data);
+
+    // Stop scanning while processing (prevents multiple triggers)
     setScanned(true);
+    setRawData(data);
 
     try {
       let parsed = null;
+
+      // Try parsing JSON QR
       try {
         parsed = JSON.parse(data);
       } catch {
         parsed = null;
       }
 
+      // Normalize QR data
       const result = parsed
         ? {
-            name: parsed.name || "Unknown",
-            roll: parsed.rollNumber || "N/A",
+            name: parsed.name?.trim() || "",
+            roll: parsed.rollNumber?.trim() || "",
             photo:
               parsed.profilePhoto ||
               "https://dummyimage.com/200x200/000/fff&text=No+Photo",
-            valid: true,
+            valid: !!(parsed.name && parsed.rollNumber),
             timestamp: new Date().toLocaleString(),
           }
         : {
             name: data.includes("Name:")
               ? data.split("\n")[0]?.replace("Name:", "").trim()
-              : "Unknown",
+              : "",
             roll: data.includes("Roll:")
               ? data.split("\n")[1]?.replace("Roll:", "").trim()
-              : "N/A",
+              : "",
             photo: "https://dummyimage.com/200x200/000/fff&text=No+Photo",
-            valid: data.includes("Name:") || data.includes("Roll:"),
+            valid:
+              data.includes("Name:") &&
+              data.includes("Roll:") &&
+              data.split("\n")[1]?.includes("Roll:"),
             timestamp: new Date().toLocaleString(),
           };
 
+      // 🚫 Invalid QR case
+      if (!result.valid || !result.name || !result.roll) {
+        console.warn("⚠️ Invalid QR scanned.");
+        Alert.alert(
+          "Invalid QR",
+          "The scanned QR code is not valid.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                console.log("🔁 Scanner reset after invalid QR");
+                setScanned(false); // resume scanning
+                setStudentData(null);
+                setRawData("");
+              },
+            },
+          ],
+          { cancelable: false }
+        );
+        return;
+      }
+
+      // ✅ Valid QR → proceed
       setStudentData(result);
+      setScanned(true);
     } catch (error) {
-      console.log("QR Parse Error:", error);
-      Alert.alert("Invalid QR", "The scanned QR code is not valid.");
-      setScanned(false);
+      console.error("❌ QR Parse Error:", error);
+      Alert.alert("Invalid QR", "The scanned QR code is not valid.", [
+        {
+          text: "OK",
+          onPress: () => {
+            console.log("🔁 Scanner reset after parse error");
+            setScanned(false); // re-enable scanning
+          },
+        },
+      ]);
     }
   };
 
@@ -169,7 +208,7 @@ export default function GuardScannerScreen({ log, setLog }) {
   if (!permission) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size='large' color='#3B82F6' />
+        <ActivityIndicator size="large" color="#3B82F6" />
         <Text style={styles.loadingText}>Requesting camera permission...</Text>
       </View>
     );

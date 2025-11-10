@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 12 : 28,
+    // paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 12 : 28,
   },
   backButton: {
     width: 44,
