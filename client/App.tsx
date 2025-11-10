@@ -13,6 +13,7 @@ import AdminHome from "./Screen/AdminHome";
 import ManageGuardsScreen from "./Screen/ManageGuardsScreen";
 import ManageAdminScreen from "./Screen/ManageAdminScreen";
 import ViewLogsScreen from "./Screen/ViewLogsScreen";
+import SplashScreen from "./Screen/SplashScreen";
 
 // Screens
 
@@ -22,7 +23,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName='RoleSelector'
+        initialRouteName='SplashScreen'
         screenOptions={{
           headerTitleAlign: "center",
           headerStyle: { backgroundColor: "#0F172A" },
@@ -34,6 +35,11 @@ export default function App() {
           name='RoleSelector'
           component={RoleSelector}
           options={{ headerShown: false, gestureEnabled: false }}
+        />
+        <Stack.Screen
+          name='SplashScreen'
+          component={SplashScreen}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen
