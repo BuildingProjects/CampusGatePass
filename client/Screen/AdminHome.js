@@ -23,11 +23,9 @@ export default function AdminHome({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
-    totalGuards: 0,
-    activeGuards: 0,
-    todayScans: 0,
-    todayEntries: 0,
-    todayExits: 0,
+    totalLogs: 0,
+    totalExit: 0,
+    totalEntry: 0,
   });
 
   useEffect(() => {
@@ -35,47 +33,107 @@ export default function AdminHome({ navigation }) {
     fetchStats();
   }, []);
 
-  const fetchAdminProfile = async () => {
-    try {
-      const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "RoleSelector" }],
-          })
-        );
-        return;
-      }
+  // const fetchAdminProfile = async () => {
+  //   try {
+  //     const token = await AsyncStorage.getItem("token");
+  //     if (!token) {
+  //       navigation.dispatch(
+  //         CommonActions.reset({
+  //           index: 0,
+  //           routes: [{ name: "RoleSelector" }],
+  //         })
+  //       );
+  //       return;
+  //     }
 
-      const res = await fetch(`${API_BASE_URL}/api/admin/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (data.success) setAdmin(data.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     const res = await fetch(`${API_BASE_URL}/api/admin/profile`, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+  //     const data = await res.json();
+  //     if (data.success) setAdmin(data.data);
+  //   } catch (err) {
+  //     console.error(err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const fetchStats = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/admin/dashboard-stats`, {
-        headers: { Authorization: `Bearer ${token}` },
+
+      if (!token) {
+        console.warn("Authorization token missing");
+        Alert.alert(
+          "Error",
+          "Authorization token missing. Please log in again."
+        );
+        return;
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/log/gettodaylogstats`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
+
       const data = await res.json();
-      if (data.success) setStats(data.data);
+
+      if (!res.ok) {
+        // Network-level errors (like 401, 403, 500)
+        console.error("Network error:", res.status, data.message);
+        Alert.alert("Error", data.message || "Something went wrong");
+        return;
+      }
+
+      if (!data.success) {
+        // Handle API-level error messages
+        switch (data.message) {
+          case "Authorization token missing":
+            Alert.alert(
+              "Error",
+              "Authorization token missing. Please log in again."
+            );
+            break;
+          case "Invalid or expired token":
+            Alert.alert(
+              "Error",
+              "Your session has expired. Please log in again."
+            );
+            // Optionally: AsyncStorage.removeItem("token");
+            break;
+          case "Access denied. Admin only.":
+            Alert.alert("Error", "Access denied. Admins only.");
+            break;
+          case "Failed to fetch today's log statistics":
+            Alert.alert(
+              "Error",
+              "Could not fetch today's statistics. Try again later."
+            );
+            break;
+          default:
+            Alert.alert("Error", data.message || "Unknown error occurred");
+        }
+        return;
+      }
+
+      // ✅ Success case
+      console.log("Today's stats:", data.data);
+      setStats(data.data);
     } catch (err) {
-      console.error(err);
+      console.error("Profile Completion Error:", err.message);
+      Alert.alert(
+        "Network Error",
+        "Failed to connect to the server. Please check your connection."
+      );
     }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchAdminProfile(), fetchStats()]);
+    await Promise.all([fetchStats()]);
     setRefreshing(false);
   };
 
@@ -158,19 +216,19 @@ export default function AdminHome({ navigation }) {
               {[
                 {
                   label: "Total Scans",
-                  value: stats.todayScans,
+                  value: stats.totalLogs,
                   icon: "scan-outline",
                   color: "#3B82F6",
                 },
                 {
                   label: "Entries",
-                  value: stats.todayEntries,
+                  value: stats.totalEntry,
                   icon: "arrow-down-outline",
                   color: "#22C55E",
                 },
                 {
                   label: "Exits",
-                  value: stats.todayExits,
+                  value: stats.totalExit,
                   icon: "arrow-up-outline",
                   color: "#EF4444",
                 },
