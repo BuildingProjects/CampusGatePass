@@ -16,9 +16,11 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ Added for token storage
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { CommonActions } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function LoginScreen({ route, navigation }) {
   const { role } = route.params;
@@ -26,6 +28,31 @@ export default function LoginScreen({ route, navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedInput, setFocusedInput] = useState(null);
+
+  const getRoleConfig = () => {
+    const configs = {
+      Student: {
+        icon: "school-outline",
+        color: "#3B82F6",
+        gradient: ["#3B82F6", "#2563EB"],
+      },
+      Admin: {
+        icon: "shield-checkmark-outline",
+        color: "#8B5CF6",
+        gradient: ["#8B5CF6", "#7C3AED"],
+      },
+      Guard: {
+        icon: "scan-outline",
+        color: "#F59E0B",
+        gradient: ["#F59E0B", "#D97706"],
+      },
+    };
+    return configs[role] || configs.Student;
+  };
+
+  const roleConfig = getRoleConfig();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -69,12 +96,10 @@ export default function LoginScreen({ route, navigation }) {
 
       const { token, role: userRole, email: userEmail, isVerified } = data.data;
 
-      // ✅ Save token securely for later use
       await AsyncStorage.setItem("token", token);
       await AsyncStorage.setItem("role", userRole);
       await AsyncStorage.setItem("email", userEmail);
 
-      // ✅ Student Login Flow
       if (userRole === "student") {
         if (!isVerified) {
           console.log("User not verified → sending OTP...");
@@ -111,7 +136,6 @@ export default function LoginScreen({ route, navigation }) {
             "OTP sent successfully to your registered email!"
           );
 
-          // ✅ Navigate to OTP screen with token
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
@@ -126,27 +150,20 @@ export default function LoginScreen({ route, navigation }) {
           return;
         }
 
-        // ✅ Verified student → navigate to StudentHome
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: "StudentHome" }], // token retrieved from AsyncStorage later
+            routes: [{ name: "StudentHome" }],
           })
         );
-      }
-
-      // ✅ Guard Login Flow
-      else if (userRole === "guard") {
+      } else if (userRole === "guard") {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
             routes: [{ name: "GuardHome" }],
           })
         );
-      }
-
-      // ✅ Admin Login Flow
-      else if (userRole === "admin") {
+      } else if (userRole === "admin") {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
@@ -168,112 +185,317 @@ export default function LoginScreen({ route, navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.container}>
-            <Text style={styles.heading}>Login as {role}</Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#94A3B8"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#94A3B8"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
-
-            <Pressable
-              style={[styles.loginBtn, loading && { opacity: 0.6 }]}
-              onPress={handleLogin}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.btnText}>Login</Text>
-              )}
-            </Pressable>
-
-            {role === "Student" && (
-              <TouchableOpacity
-                onPress={() => navigation.navigate("SignupScreen", { role })}
+    <LinearGradient colors={["#0A0E1A", "#1E293B"]} style={styles.gradient}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            keyboardShouldPersistTaps='handled'
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.container}>
+              {/* Back Button */}
+              <Pressable
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
               >
-                <Text style={styles.switchText}>
-                  Don’t have an account?{" "}
-                  <Text style={styles.linkText}>Register</Text>
+                <Ionicons name='arrow-back' size={24} color='#F1F5F9' />
+              </Pressable>
+
+              {/* Header with Icon */}
+              <View style={styles.header}>
+                <View
+                  style={[
+                    styles.iconCircle,
+                    { backgroundColor: roleConfig.color + "20" },
+                  ]}
+                >
+                  <Ionicons
+                    name={roleConfig.icon}
+                    size={48}
+                    color={roleConfig.color}
+                  />
+                </View>
+                <Text style={styles.heading}>Welcome Back</Text>
+                <Text style={styles.subheading}>
+                  Sign in as {role} to continue
                 </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </ScrollView>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+              </View>
+
+              {/* Login Form */}
+              <View style={styles.form}>
+                {/* Email Input */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Email Address</Text>
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      focusedInput === "email" && styles.inputFocused,
+                    ]}
+                  >
+                    <Ionicons
+                      name='mail-outline'
+                      size={20}
+                      color={
+                        focusedInput === "email" ? roleConfig.color : "#64748B"
+                      }
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder='Enter your email'
+                      placeholderTextColor='#64748B'
+                      keyboardType='email-address'
+                      autoCapitalize='none'
+                      value={email}
+                      onChangeText={setEmail}
+                      onFocus={() => setFocusedInput("email")}
+                      onBlur={() => setFocusedInput(null)}
+                    />
+                  </View>
+                </View>
+
+                {/* Password Input */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Password</Text>
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      focusedInput === "password" && styles.inputFocused,
+                    ]}
+                  >
+                    <Ionicons
+                      name='lock-closed-outline'
+                      size={20}
+                      color={
+                        focusedInput === "password"
+                          ? roleConfig.color
+                          : "#64748B"
+                      }
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder='Enter your password'
+                      placeholderTextColor='#64748B'
+                      secureTextEntry={!showPassword}
+                      value={password}
+                      onChangeText={setPassword}
+                      onFocus={() => setFocusedInput("password")}
+                      onBlur={() => setFocusedInput(null)}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Ionicons
+                        name={showPassword ? "eye-off-outline" : "eye-outline"}
+                        size={20}
+                        color='#64748B'
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Login Button */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.loginButton,
+                    { opacity: loading || pressed ? 0.8 : 1 },
+                  ]}
+                  onPress={handleLogin}
+                  disabled={loading}
+                >
+                  <LinearGradient
+                    colors={roleConfig.gradient}
+                    style={styles.loginGradient}
+                  >
+                    {loading ? (
+                      <ActivityIndicator size='small' color='#FFF' />
+                    ) : (
+                      <>
+                        <Text style={styles.loginButtonText}>Sign In</Text>
+                        <Ionicons name='arrow-forward' size={20} color='#FFF' />
+                      </>
+                    )}
+                  </LinearGradient>
+                </Pressable>
+
+                {/* Register Link for Students */}
+                {role === "Student" && (
+                  <View style={styles.registerContainer}>
+                    <Text style={styles.registerText}>
+                      Don't have an account?{" "}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate("SignupScreen", { role })
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.registerLink,
+                          { color: roleConfig.color },
+                        ]}
+                      >
+                        Create Account
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+
+              {/* Footer */}
+              <View style={styles.footer}>
+                <View style={styles.securityBadge}>
+                  <Ionicons name='shield-checkmark' size={16} color='#22C55E' />
+                  <Text style={styles.securityText}>Secure Login</Text>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: "center",
+    paddingVertical: 40,
   },
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
-    alignItems: "center",
-    justifyContent: "center",
     paddingHorizontal: 24,
-    paddingVertical: 40,
+    justifyContent: "center",
+  },
+  backButton: {
+    position: "absolute",
+    top: 20,
+    left: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#1E293B",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 4,
+    zIndex: 10,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 40,
+  },
+  iconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    elevation: 8,
   },
   heading: {
-    fontSize: 24,
-    color: "#fff",
-    fontWeight: "700",
+    fontSize: 32,
+    color: "#F1F5F9",
+    fontWeight: "800",
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  subheading: {
+    fontSize: 16,
+    color: "#94A3B8",
+    fontWeight: "500",
+  },
+  form: {
+    width: "100%",
+  },
+  inputContainer: {
     marginBottom: 20,
   },
-  input: {
-    width: "100%",
-    backgroundColor: "#1E293B",
-    color: "#fff",
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-  loginBtn: {
-    backgroundColor: "#10B981",
-    width: "100%",
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  btnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  switchText: {
-    color: "#cbd5e1",
-    marginTop: 20,
+  inputLabel: {
+    color: "#94A3B8",
     fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+    marginLeft: 4,
   },
-  linkText: {
-    color: "#3B82F6",
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1E293B",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  inputFocused: {
+    borderColor: "#3B82F6",
+    backgroundColor: "#0F172A",
+  },
+  input: {
+    flex: 1,
+    color: "#F1F5F9",
+    fontSize: 16,
+    paddingVertical: 12,
+    marginLeft: 12,
+  },
+  loginButton: {
+    marginTop: 10,
+    borderRadius: 14,
+    overflow: "hidden",
+    elevation: 6,
+  },
+  loginGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    gap: 8,
+  },
+  loginButtonText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  registerContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 24,
+  },
+  registerText: {
+    color: "#94A3B8",
+    fontSize: 15,
+  },
+  registerLink: {
+    fontSize: 15,
+    fontWeight: "700",
+    textDecorationLine: "underline",
+  },
+  footer: {
+    alignItems: "center",
+    marginTop: 40,
+  },
+  securityBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(34,197,94,0.1)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  securityText: {
+    color: "#22C55E",
+    fontSize: 13,
     fontWeight: "600",
   },
 });

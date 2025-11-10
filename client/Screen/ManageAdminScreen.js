@@ -15,6 +15,7 @@ import {
   Keyboard,
   Platform,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
@@ -237,7 +238,7 @@ export default function ManageAdminScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size='large' color='#8B5CF6' />
+        <ActivityIndicator size="large" color="#8B5CF6" />
         <Text style={styles.loadingText}>Loading admins...</Text>
       </View>
     );
@@ -252,7 +253,7 @@ export default function ManageAdminScreen({ navigation }) {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name='arrow-back' size={24} color='#F1F5F9' />
+            <Ionicons name="arrow-back" size={24} color="#F1F5F9" />
           </Pressable>
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>Manage Admins</Text>
@@ -261,7 +262,7 @@ export default function ManageAdminScreen({ navigation }) {
             </Text>
           </View>
           <Pressable style={styles.addButton} onPress={openAddModal}>
-            <Ionicons name='add' size={24} color='#FFF' />
+            <Ionicons name="add" size={24} color="#FFF" />
           </Pressable>
         </View>
 
@@ -291,19 +292,19 @@ export default function ManageAdminScreen({ navigation }) {
                     Administrator
                   </Text>
                 </View>
-                <Pressable
+                {/* <Pressable
                   style={styles.deleteButton}
                   onPress={() => handleDelete(admin)}
                 >
                   <Ionicons name='trash-outline' size={18} color='#EF4444' />
-                </Pressable>
+                </Pressable> */}
               </View>
             ))
           )}
         </ScrollView>
 
         {/* Add Admin Modal */}
-        <Modal visible={modalVisible} animationType='slide' transparent>
+        <Modal visible={modalVisible} animationType="slide" transparent>
           <View style={styles.modalOverlay}>
             <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -314,7 +315,7 @@ export default function ManageAdminScreen({ navigation }) {
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>Add New Admin</Text>
                     <Pressable onPress={() => setModalVisible(false)}>
-                      <Ionicons name='close' size={24} color='#94A3B8' />
+                      <Ionicons name="close" size={24} color="#94A3B8" />
                     </Pressable>
                   </View>
 
@@ -323,8 +324,8 @@ export default function ManageAdminScreen({ navigation }) {
                       <Text style={styles.inputLabel}>Full Name *</Text>
                       <TextInput
                         style={styles.input}
-                        placeholder='Enter admin name'
-                        placeholderTextColor='#64748B'
+                        placeholder="Enter admin name"
+                        placeholderTextColor="#64748B"
                         value={formData.name}
                         onChangeText={(text) =>
                           setFormData({ ...formData, name: text })
@@ -336,14 +337,14 @@ export default function ManageAdminScreen({ navigation }) {
                       <Text style={styles.inputLabel}>Email *</Text>
                       <TextInput
                         style={styles.input}
-                        placeholder='admin@example.com'
-                        placeholderTextColor='#64748B'
+                        placeholder="admin@example.com"
+                        placeholderTextColor="#64748B"
                         value={formData.email}
                         onChangeText={(text) =>
                           setFormData({ ...formData, email: text })
                         }
-                        keyboardType='email-address'
-                        autoCapitalize='none'
+                        keyboardType="email-address"
+                        autoCapitalize="none"
                       />
                     </View>
 
@@ -351,13 +352,13 @@ export default function ManageAdminScreen({ navigation }) {
                       <Text style={styles.inputLabel}>Employee ID *</Text>
                       <TextInput
                         style={styles.input}
-                        placeholder='Enter unique employee ID'
-                        placeholderTextColor='#64748B'
+                        placeholder="Enter unique employee ID"
+                        placeholderTextColor="#64748B"
                         value={formData.employeeId}
                         onChangeText={(text) =>
                           setFormData({ ...formData, employeeId: text })
                         }
-                        autoCapitalize='characters'
+                        autoCapitalize="characters"
                       />
                     </View>
 
@@ -365,8 +366,8 @@ export default function ManageAdminScreen({ navigation }) {
                       <Text style={styles.inputLabel}>Password *</Text>
                       <TextInput
                         style={styles.input}
-                        placeholder='Enter password'
-                        placeholderTextColor='#64748B'
+                        placeholder="Enter password"
+                        placeholderTextColor="#64748B"
                         value={formData.password}
                         onChangeText={(text) =>
                           setFormData({ ...formData, password: text })
@@ -420,22 +421,27 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  // ----- HEADER -----
+  // ----- ✅ UNIFIED HEADER -----
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 18,
     backgroundColor: "#1E293B",
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    elevation: 4,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 12 : 28,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: "#0F172A",
     justifyContent: "center",
     alignItems: "center",
@@ -457,7 +463,7 @@ const styles = StyleSheet.create({
   addButton: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: "#8B5CF6",
     justifyContent: "center",
     alignItems: "center",
@@ -470,6 +476,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
+    paddingBottom: 100,
   },
   emptyState: {
     alignItems: "center",
