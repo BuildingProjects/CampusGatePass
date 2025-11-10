@@ -87,12 +87,7 @@ exports.getEmployees = async (req, res) => {
       });
     }
 
-    if (!["guard", "admin"].includes(role.toLowerCase())) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid role. Allowed roles: guard, admin",
-      });
-    }
+  
 
     let employees = [];
 

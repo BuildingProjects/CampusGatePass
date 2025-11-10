@@ -94,3 +94,55 @@ exports.getAllLogs = async (req, res) => {
     });
   }
 };
+
+
+
+
+exports.getTodayLogStats = async (req, res) => {
+  try {
+    // Get today's date range (00:00:00 → 23:59:59)
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    console.log("Fetching log stats between:", startOfDay, "and", endOfDay);
+
+    // Count total logs
+    const totalLogs = await Log.countDocuments({
+      timestamp: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    // Count total ENTRY logs
+    const totalEntry = await Log.countDocuments({
+      action: "ENTRY",
+      timestamp: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    // Count total EXIT logs
+    const totalExit = await Log.countDocuments({
+      action: "EXIT",
+      timestamp: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    console.log(`Today's Logs: ${totalLogs} | Entry: ${totalEntry} | Exit: ${totalExit}`);
+
+    return res.status(200).json({
+      success: true,
+      date: startOfDay.toISOString().split("T")[0],
+      data: {
+        totalLogs,
+        totalEntry,
+        totalExit,
+      },
+    });
+
+  } catch (err) {
+    console.error("getTodayLogStats Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch today's log statistics",
+    });
+  }
+};
