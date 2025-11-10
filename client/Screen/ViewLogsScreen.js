@@ -13,6 +13,7 @@ import {
   Keyboard,
   Platform,
   Pressable,
+  StatusBar,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
@@ -31,13 +32,10 @@ export default function ViewLogsScreen({ navigation }) {
 
       const response = await fetch(`${API_BASE_URL}/api/log/getalllogs`, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const text = await response.text();
-      console.log("🧾 Raw Response (All Logs):", text);
       const data = JSON.parse(text);
 
       if (!response.ok || !data.success) {
@@ -55,7 +53,7 @@ export default function ViewLogsScreen({ navigation }) {
     }
   };
 
-  // ✅ Fetch logs for a specific roll number (GET with query param)
+  // ✅ Fetch logs for a specific roll number
   const searchLogs = async () => {
     try {
       if (searchQuery.trim() === "") {
@@ -72,14 +70,11 @@ export default function ViewLogsScreen({ navigation }) {
         )}`,
         {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       const text = await response.text();
-      console.log("🧾 Raw Response (Search Logs):", text);
       const data = JSON.parse(text);
 
       if (!response.ok || !data.success) {
@@ -130,38 +125,36 @@ export default function ViewLogsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
       <View style={styles.container}>
-        {/* Header */}
-        {/* <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={26} color="#F1F5F9" />
-          </TouchableOpacity>
-          <Text style={styles.title}>All Logs</Text>
-          <View style={{ width: 26 }} />
-        </View>  */}
+        {/* ✅ Header */}
         <View style={styles.header}>
           <Pressable
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name='arrow-back' size={24} color='#F1F5F9' />
+            <Ionicons name="arrow-back" size={24} color="#F1F5F9" />
           </Pressable>
           <View style={styles.headerTextContainer}>
-            <Text style={styles.title}>All Logs</Text>
+            <Text style={styles.headerTitle}>All Logs</Text>
           </View>
         </View>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Ionicons name='search-outline' size={20} color='#94A3B8' />
+          <Ionicons name="search-outline" size={20} color="#94A3B8" />
           <TextInput
             style={styles.searchInput}
-            placeholder='Search by Roll Number...'
-            placeholderTextColor='#94A3B8'
+            placeholder="Search by Roll Number..."
+            placeholderTextColor="#94A3B8"
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
-            returnKeyType='search'
+            returnKeyType="search"
           />
           {searchQuery !== "" && (
             <TouchableOpacity
@@ -170,7 +163,7 @@ export default function ViewLogsScreen({ navigation }) {
                 fetchAllLogs();
               }}
             >
-              <Ionicons name='close-circle' size={20} color='#64748B' />
+              <Ionicons name="close-circle" size={20} color="#64748B" />
             </TouchableOpacity>
           )}
         </View>
@@ -178,12 +171,12 @@ export default function ViewLogsScreen({ navigation }) {
         {/* Logs List */}
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size='large' color='#3B82F6' />
+            <ActivityIndicator size="large" color="#3B82F6" />
             <Text style={styles.loadingText}>Fetching logs...</Text>
           </View>
         ) : logs.length === 0 ? (
           <View style={styles.center}>
-            <Ionicons name='document-text-outline' size={48} color='#475569' />
+            <Ionicons name="document-text-outline" size={48} color="#475569" />
             <Text style={styles.noLogsText}>No logs found</Text>
           </View>
         ) : (
@@ -206,23 +199,59 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    // paddingHorizontal: 20,
-    // paddingTop: 20,
     backgroundColor: "#0A0E1A",
   },
-  headerRow: {
+
+  // ----- ✅ UNIFIED HEADER -----
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 20,
-    paddingTop: Platform.OS === "android" ? 20 : 0, // ✅ add extra safe top padding
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    backgroundColor: "#1E293B",
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 12 : 28,
   },
-
-  title: {
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "#0F172A",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  headerTitle: {
     color: "#F1F5F9",
     fontSize: 22,
     fontWeight: "800",
   },
+  headerSubtitle: {
+    color: "#64748B",
+    fontSize: 13,
+    marginTop: 2,
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "#8B5CF6",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 4,
+  },
+
+  // ----- SEARCH -----
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -232,7 +261,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginBottom: 20,
     marginHorizontal: 20,
-    marginTop: 5,
+    marginTop: 10,
   },
   searchInput: {
     flex: 1,
@@ -240,25 +269,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     paddingHorizontal: 8,
   },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 50,
-  },
-  loadingText: {
-    color: "#94A3B8",
-    marginTop: 12,
-    fontSize: 15,
-  },
-  noLogsText: {
-    color: "#64748B",
-    marginTop: 8,
-    fontSize: 14,
-    fontWeight: "500",
-  },
+
+  // ----- LIST -----
   listContainer: {
-    paddingBottom: 40,
+    paddingBottom: 100,
     marginHorizontal: 20,
   },
   logCard: {
@@ -304,47 +318,20 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(239,68,68,0.15)",
     color: "#EF4444",
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#1E293B",
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    elevation: 4,
-    marginBottom: 10,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: "#0F172A",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTextContainer: {
+  center: {
     flex: 1,
-    marginLeft: 12,
-  },
-  headerTitle: {
-    color: "#F1F5F9",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  headerSubtitle: {
-    color: "#64748B",
-    fontSize: 13,
-    marginTop: 2,
-  },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#8B5CF6",
     justifyContent: "center",
     alignItems: "center",
-    elevation: 4,
+  },
+  loadingText: {
+    color: "#94A3B8",
+    marginTop: 12,
+    fontSize: 15,
+  },
+  noLogsText: {
+    color: "#64748B",
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
