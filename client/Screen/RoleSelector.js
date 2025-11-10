@@ -58,7 +58,7 @@ export default function RoleSelector({ navigation }) {
                 <Ionicons name='shield-checkmark' size={40} color='#3B82F6' />
               </View>
             </View>
-            <Text style={styles.title}>Campus Gate Pass</Text>
+            <Text style={styles.title}>InOut</Text>
             <Text style={styles.subtitle}>Select your role to continue</Text>
           </View>
 
