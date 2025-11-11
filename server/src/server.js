@@ -9,7 +9,13 @@ const studentRoutes = require("./routes/student.routes");
 const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "*", // ✅ allow all for mobile app
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 connectDB();
