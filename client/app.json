@@ -1,32 +1,38 @@
 {
   "expo": {
-    "name": "client",
-    "slug": "client",
+    "name": "InOut",
+    "slug": "inout",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/inout-logo.jpg",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
     "newArchEnabled": true,
+
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0A0E1A"
     },
+
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon": "./assets/inout-logo.jpg"
     },
+
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/inout-logo.jpg",
+        "backgroundColor": "#0A0E1A"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
+
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/inout-logo.jpg"
     },
+
     "plugins": ["expo-barcode-scanner"]
   }
 }
